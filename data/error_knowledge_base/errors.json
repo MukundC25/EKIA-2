@@ -1,0 +1,469 @@
+[
+  {
+    "id": "err_001",
+    "error_type": "NullPointerException",
+    "language": "Java",
+    "concept": "Null Reference",
+    "description": "Occurs when you attempt to use an object reference that has not been initialized (points to null). Java throws this unchecked runtime exception when calling methods or accessing fields on a null object.",
+    "common_causes": [
+      "Calling a method on an uninitialized object",
+      "Accessing an array element that is null",
+      "Method returning null that caller doesn't check",
+      "Uninitialized class fields"
+    ],
+    "fix": "Always initialize objects before use. Use Optional<T> or null checks. Leverage @NonNull annotations, Objects.requireNonNull(), or the Null Object Pattern.",
+    "code_example": "String s = null;\nSystem.out.println(s.length()); // NullPointerException",
+    "fix_code": "String s = \"Hello\";\nif (s != null) {\n    System.out.println(s.length());\n}\n// Or with Optional:\nOptional.ofNullable(s).ifPresent(str -> System.out.println(str.length()));",
+    "related_concepts": ["Optional", "Null Safety", "Defensive Programming", "Null Object Pattern"],
+    "practice_problems": ["LeetCode 206 - Reverse Linked List", "LeetCode 141 - Linked List Cycle", "LeetCode 21 - Merge Two Sorted Lists"],
+    "tags": ["java", "runtime", "null", "memory", "npe"]
+  },
+  {
+    "id": "err_002",
+    "error_type": "ArrayIndexOutOfBoundsException",
+    "language": "Java",
+    "concept": "Array Bounds",
+    "description": "Thrown when you attempt to access an array with an index that is either negative or greater than or equal to the size of the array.",
+    "common_causes": [
+      "Off-by-one error in loop condition (using <= instead of <)",
+      "Hardcoded index that doesn't match array size",
+      "Dynamic index calculation error"
+    ],
+    "fix": "Always validate that the index is within bounds (0 to array.length - 1). Prefer enhanced for-loops or iterators when index is not needed.",
+    "code_example": "int[] arr = {1, 2, 3};\nSystem.out.println(arr[3]); // ArrayIndexOutOfBoundsException",
+    "fix_code": "int[] arr = {1, 2, 3};\nfor (int i = 0; i < arr.length; i++) {\n    System.out.println(arr[i]);\n}",
+    "related_concepts": ["Array Traversal", "Off-by-One Error", "Safe Array Access"],
+    "practice_problems": ["LeetCode 977 - Squares of Sorted Array", "LeetCode 485 - Max Consecutive Ones", "LeetCode 724 - Find Pivot Index"],
+    "tags": ["java", "array", "bounds", "runtime", "indexing"]
+  },
+  {
+    "id": "err_003",
+    "error_type": "StackOverflowError",
+    "language": "Java",
+    "concept": "Recursion / Call Stack",
+    "description": "Occurs when the call stack overflows due to infinite or excessively deep recursion. Each method call consumes stack space; without a proper base case, the stack fills up.",
+    "common_causes": [
+      "Missing base case in recursion",
+      "Base case that is never reached",
+      "Mutual recursion without termination",
+      "Circular object references in toString/equals"
+    ],
+    "fix": "Ensure every recursive function has a clearly reachable base case. Consider converting deep recursion to iterative approach using an explicit Stack data structure.",
+    "code_example": "public int factorial(int n) {\n    return n * factorial(n - 1); // No base case!\n}",
+    "fix_code": "public int factorial(int n) {\n    if (n <= 1) return 1; // Base case\n    return n * factorial(n - 1);\n}",
+    "related_concepts": ["Recursion", "Call Stack", "Memoization", "Dynamic Programming", "Tail Recursion"],
+    "practice_problems": ["LeetCode 70 - Climbing Stairs", "LeetCode 104 - Maximum Depth of Binary Tree", "LeetCode 509 - Fibonacci Number"],
+    "tags": ["java", "recursion", "stack", "memory", "runtime"]
+  },
+  {
+    "id": "err_004",
+    "error_type": "ClassCastException",
+    "language": "Java",
+    "concept": "Type Casting",
+    "description": "Thrown when you attempt to cast an object to a class that it is not an instance of. Common when working with raw types or collections without generics.",
+    "common_causes": [
+      "Incorrect downcast in inheritance hierarchy",
+      "Raw type collections without generics",
+      "Incorrect deserialization"
+    ],
+    "fix": "Use instanceof before casting. Use generics to enforce type safety at compile time. Use pattern matching instanceof in Java 16+.",
+    "code_example": "Object obj = \"Hello\";\nInteger i = (Integer) obj; // ClassCastException",
+    "fix_code": "Object obj = \"Hello\";\nif (obj instanceof String s) {\n    System.out.println(s.toUpperCase());\n}",
+    "related_concepts": ["Generics", "Polymorphism", "instanceof", "Type Safety"],
+    "practice_problems": ["LeetCode 387 - First Unique Character", "LeetCode 242 - Valid Anagram"],
+    "tags": ["java", "casting", "generics", "type-safety"]
+  },
+  {
+    "id": "err_005",
+    "error_type": "KeyError",
+    "language": "Python",
+    "concept": "Dictionary Access",
+    "description": "Raised when a dictionary key is not found in the dictionary. Python raises this when using square bracket notation to access a key that doesn't exist.",
+    "common_causes": [
+      "Accessing a key that was never added to the dict",
+      "Typo in key name",
+      "Key deleted before access",
+      "Case sensitivity issues"
+    ],
+    "fix": "Use dict.get(key, default) for safe access. Use defaultdict for automatic default values. Check key existence with 'in' operator before access.",
+    "code_example": "data = {'name': 'Alice'}\nprint(data['age'])  # KeyError: 'age'",
+    "fix_code": "data = {'name': 'Alice'}\n# Safe access with default\nage = data.get('age', 0)\n# Or check first\nif 'age' in data:\n    print(data['age'])",
+    "related_concepts": ["Dict.get()", "defaultdict", "Dictionary Comprehension", "Defensive Access"],
+    "practice_problems": ["LeetCode 1 - Two Sum", "LeetCode 49 - Group Anagrams", "LeetCode 169 - Majority Element"],
+    "tags": ["python", "dictionary", "runtime", "key-access"]
+  },
+  {
+    "id": "err_006",
+    "error_type": "AttributeError",
+    "language": "Python",
+    "concept": "Object Attributes",
+    "description": "Raised when an attribute reference or assignment fails. Common when calling a method on None or accessing an attribute that doesn't exist on an object.",
+    "common_causes": [
+      "Calling method on None (function returned None implicitly)",
+      "Typo in attribute/method name",
+      "Using wrong object type",
+      "Accessing class-level attribute as instance or vice versa"
+    ],
+    "fix": "Check if the object is None before accessing attributes. Verify method names via dir(obj). Use hasattr(obj, 'attr') for conditional access.",
+    "code_example": "result = some_function()  # Returns None\nresult.do_something()  # AttributeError: 'NoneType'",
+    "fix_code": "result = some_function()\nif result is not None:\n    result.do_something()\n# Or using getattr safely:\ngetattr(result, 'do_something', lambda: None)()",
+    "related_concepts": ["None checking", "hasattr", "getattr", "Pythonic Null handling"],
+    "practice_problems": ["LeetCode 876 - Middle of Linked List", "LeetCode 237 - Delete Node in Linked List"],
+    "tags": ["python", "attributes", "none", "runtime"]
+  },
+  {
+    "id": "err_007",
+    "error_type": "IndexError",
+    "language": "Python",
+    "concept": "Sequence Indexing",
+    "description": "Raised when a sequence subscript is out of range. Similar to Java's ArrayIndexOutOfBoundsException but for Python lists, tuples, and strings.",
+    "common_causes": [
+      "Accessing index beyond list length",
+      "Empty list with non-empty assumption",
+      "Off-by-one in loop logic"
+    ],
+    "fix": "Validate list length before indexing. Use try/except IndexError. Use list slicing which is forgiving with out-of-bound indices.",
+    "code_example": "lst = [1, 2, 3]\nprint(lst[5])  # IndexError: list index out of range",
+    "fix_code": "lst = [1, 2, 3]\n# Safe access\nindex = 5\nif index < len(lst):\n    print(lst[index])\n# Or with get pattern\nvalue = next(iter(lst[5:]), None)  # Returns None if out of bounds",
+    "related_concepts": ["Slicing", "List Length", "Off-by-One", "Defensive Coding"],
+    "practice_problems": ["LeetCode 189 - Rotate Array", "LeetCode 53 - Maximum Subarray"],
+    "tags": ["python", "list", "index", "bounds", "runtime"]
+  },
+  {
+    "id": "err_008",
+    "error_type": "TypeError",
+    "language": "Python",
+    "concept": "Type Mismatch",
+    "description": "Raised when an operation or function is applied to an object of an inappropriate type. Python is dynamically typed, making this a common runtime error.",
+    "common_causes": [
+      "Concatenating string with integer",
+      "Calling non-callable objects",
+      "Wrong number of function arguments",
+      "Operating on None"
+    ],
+    "fix": "Use type hints and runtime type checking. Validate input types with isinstance(). Use explicit type conversion (str(), int(), float()).",
+    "code_example": "age = 25\nmessage = 'Age is: ' + age  # TypeError: can only concatenate str (not 'int')",
+    "fix_code": "age = 25\nmessage = f'Age is: {age}'  # f-string handles conversion\n# Or explicitly:\nmessage = 'Age is: ' + str(age)",
+    "related_concepts": ["Type Hints", "f-strings", "isinstance()", "Duck Typing"],
+    "practice_problems": ["LeetCode 415 - Add Strings", "LeetCode 8 - String to Integer (atoi)"],
+    "tags": ["python", "type", "runtime", "conversion"]
+  },
+  {
+    "id": "err_009",
+    "error_type": "RecursionError",
+    "language": "Python",
+    "concept": "Recursion Limit",
+    "description": "Raised when the maximum recursion depth (default 1000 in CPython) is exceeded. Python equivalent of Java's StackOverflowError.",
+    "common_causes": [
+      "Missing base case in recursive function",
+      "Circular data structure traversal",
+      "Deep tree/graph recursion without stack management"
+    ],
+    "fix": "Add proper base case. Use sys.setrecursionlimit() cautiously. Convert to iterative approach. Use @functools.lru_cache for memoization to avoid recomputation.",
+    "code_example": "def fib(n):\n    return fib(n-1) + fib(n-2)  # No base case!",
+    "fix_code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    if n <= 1:  # Base case\n        return n\n    return fib(n-1) + fib(n-2)",
+    "related_concepts": ["Memoization", "lru_cache", "Dynamic Programming", "Iterative Approach"],
+    "practice_problems": ["LeetCode 509 - Fibonacci Number", "LeetCode 300 - Longest Increasing Subsequence", "LeetCode 322 - Coin Change"],
+    "tags": ["python", "recursion", "stack", "memoization"]
+  },
+  {
+    "id": "err_010",
+    "error_type": "ZeroDivisionError",
+    "language": "Python",
+    "concept": "Arithmetic Safety",
+    "description": "Raised when the divisor in a division or modulo operation is zero. Basic arithmetic safety violation.",
+    "common_causes": [
+      "User input without validation",
+      "Dynamic denominator from computation",
+      "Counter that reaches zero unexpectedly"
+    ],
+    "fix": "Always validate the denominator before division. Use try/except ZeroDivisionError. Return a sentinel value (None, 0, or float('inf')) in case of zero.",
+    "code_example": "def average(total, count):\n    return total / count  # ZeroDivisionError if count == 0",
+    "fix_code": "def average(total, count):\n    if count == 0:\n        return 0  # Or None, or raise a meaningful exception\n    return total / count",
+    "related_concepts": ["Arithmetic Safety", "Guard Clauses", "Input Validation"],
+    "practice_problems": ["LeetCode 69 - Sqrt(x)", "LeetCode 50 - Pow(x, n)"],
+    "tags": ["python", "arithmetic", "division", "zero", "runtime"]
+  },
+  {
+    "id": "err_011",
+    "error_type": "TypeError: Cannot read properties of undefined",
+    "language": "JavaScript",
+    "concept": "Undefined Property Access",
+    "description": "Occurs when you try to access a property or method of undefined or null in JavaScript. The JS equivalent of NullPointerException.",
+    "common_causes": [
+      "Async data not yet loaded when accessed",
+      "API response structure mismatch",
+      "Typo in property name",
+      "Array out of bounds returning undefined"
+    ],
+    "fix": "Use optional chaining (?.) for safe property access. Use nullish coalescing (??) for fallback values. Guard with conditional checks before deep property access.",
+    "code_example": "const user = undefined;\nconsole.log(user.name); // TypeError: Cannot read properties of undefined",
+    "fix_code": "const user = undefined;\n// Optional chaining — returns undefined safely\nconsole.log(user?.name);\n// With fallback\nconsole.log(user?.name ?? 'Anonymous');",
+    "related_concepts": ["Optional Chaining", "Nullish Coalescing", "Async/Await", "Defensive Programming"],
+    "practice_problems": ["LeetCode 387 - First Unique Character", "LeetCode 242 - Valid Anagram"],
+    "tags": ["javascript", "undefined", "null", "runtime", "property-access"]
+  },
+  {
+    "id": "err_012",
+    "error_type": "ReferenceError: variable is not defined",
+    "language": "JavaScript",
+    "concept": "Variable Scope",
+    "description": "Thrown when you access a variable that hasn't been declared in the current or any enclosing scope.",
+    "common_causes": [
+      "Accessing let/const before declaration (Temporal Dead Zone)",
+      "Typo in variable name",
+      "Variable declared inside a block accessed outside",
+      "Missing import statement"
+    ],
+    "fix": "Declare variables with let or const before use. Understand block scoping with let/const vs function scoping with var. Check import statements for external modules.",
+    "code_example": "console.log(count); // ReferenceError\nlet count = 0;",
+    "fix_code": "let count = 0;\nconsole.log(count); // 0\n\n// Or use var for function-scoped hoisting (not recommended)\nvar hoisted = 'available everywhere in function scope';",
+    "related_concepts": ["Variable Scope", "Hoisting", "Temporal Dead Zone", "Block Scope", "let vs var vs const"],
+    "practice_problems": ["JS Scope Quiz", "LeetCode 155 - Min Stack"],
+    "tags": ["javascript", "scope", "reference", "tdc", "runtime"]
+  },
+  {
+    "id": "err_013",
+    "error_type": "Unhandled Promise Rejection",
+    "language": "JavaScript",
+    "concept": "Async Error Handling",
+    "description": "Occurs when a Promise is rejected and no rejection handler is attached. In modern Node.js, unhandled rejections crash the process.",
+    "common_causes": [
+      "Missing .catch() on promise chains",
+      "Missing try/catch in async functions",
+      "Forgetting await keyword",
+      "Error in finally block"
+    ],
+    "fix": "Always add .catch() to promise chains or use try/catch with async/await. Add a global unhandledRejection handler for safety net logging.",
+    "code_example": "async function fetchData() {\n    const res = await fetch('/api/data'); // No try/catch!\n    return res.json();\n}",
+    "fix_code": "async function fetchData() {\n    try {\n        const res = await fetch('/api/data');\n        if (!res.ok) throw new Error(`HTTP ${res.status}`);\n        return await res.json();\n    } catch (error) {\n        console.error('Fetch failed:', error);\n        throw error; // Re-throw for caller to handle\n    }\n}",
+    "related_concepts": ["Async/Await", "Promise", "Error Propagation", "try/catch"],
+    "practice_problems": ["Design Async Retry Logic", "LeetCode 1242 - Web Crawler Multithreaded"],
+    "tags": ["javascript", "async", "promise", "error-handling", "node"]
+  },
+  {
+    "id": "err_014",
+    "error_type": "Maximum update depth exceeded",
+    "language": "React (JavaScript)",
+    "concept": "Infinite Re-render Loop",
+    "description": "React throws this error when a component triggers an update that causes another update, creating an infinite loop. Usually caused by incorrect useEffect dependencies or setState calls in render.",
+    "common_causes": [
+      "setState called unconditionally in useEffect",
+      "Missing or incorrect dependency array in useEffect",
+      "setState called during render",
+      "Dependency array contains objects/functions that change every render"
+    ],
+    "fix": "Audit useEffect dependencies. Never call setState unconditionally in useEffect. Use useMemo/useCallback for stable references. Add condition before setState.",
+    "code_example": "useEffect(() => {\n    setCount(count + 1); // Infinite loop!\n}); // No dependency array",
+    "fix_code": "// Only run once when component mounts:\nuseEffect(() => {\n    setCount(prev => prev + 1);\n}, []); // Empty deps = run once\n\n// Or with condition:\nuseEffect(() => {\n    if (needsUpdate) {\n        setCount(prev => prev + 1);\n    }\n}, [needsUpdate]);",
+    "related_concepts": ["useEffect", "React Lifecycle", "useMemo", "useCallback", "Dependency Array"],
+    "practice_problems": ["Implement useDebounce Hook", "Implement useLocalStorage Hook"],
+    "tags": ["react", "hooks", "useeffect", "re-render", "infinite-loop"]
+  },
+  {
+    "id": "err_015",
+    "error_type": "Segmentation Fault",
+    "language": "C/C++",
+    "concept": "Memory Safety",
+    "description": "A segfault occurs when a program tries to access memory that it is not authorized to access. This is a critical low-level error that causes program termination.",
+    "common_causes": [
+      "Dereferencing a null or dangling pointer",
+      "Buffer overflow / writing past array bounds",
+      "Stack overflow from deep recursion",
+      "Use-after-free: accessing memory that was already freed"
+    ],
+    "fix": "Always initialize pointers. Check for null before dereferencing. Use smart pointers (unique_ptr, shared_ptr) in C++. Use valgrind or AddressSanitizer to detect memory errors.",
+    "code_example": "int *ptr = nullptr;\n*ptr = 42; // Segmentation fault!",
+    "fix_code": "// Smart pointer approach (C++):\n#include <memory>\n\nauto ptr = std::make_unique<int>(42);\n*ptr = 100; // Safe!\n\n// Or with null check:\nif (ptr != nullptr) {\n    *ptr = 42;\n}",
+    "related_concepts": ["Pointers", "Memory Management", "Smart Pointers", "RAII", "Valgrind"],
+    "practice_problems": ["Implement a Linked List in C", "Memory Pool Allocator Design"],
+    "tags": ["c", "c++", "memory", "pointer", "segfault", "critical"]
+  },
+  {
+    "id": "err_016",
+    "error_type": "Deadlock",
+    "language": "SQL / Java Concurrency",
+    "concept": "Concurrency / Locking",
+    "description": "A deadlock occurs when two or more threads or transactions are waiting for each other to release locks, creating a circular wait condition that halts all progress.",
+    "common_causes": [
+      "Two transactions locking resources in opposite order",
+      "Long-running transactions holding locks",
+      "Missing lock timeout configuration",
+      "N+1 update patterns causing table-level locks"
+    ],
+    "fix": "Always acquire locks in the same consistent order. Use lock timeouts. Keep transactions short. Use optimistic locking (versioning) instead of pessimistic locking where possible.",
+    "code_example": "-- Transaction 1: LOCK A, then tries to lock B\n-- Transaction 2: LOCK B, then tries to lock A\n-- Both are stuck!",
+    "fix_code": "-- Solution 1: Consistent lock ordering\n-- Always lock tables in alphabetical order\n\n-- Solution 2: Use SELECT FOR UPDATE with SKIP LOCKED\nSELECT * FROM orders WHERE status = 'pending'\nFOR UPDATE SKIP LOCKED LIMIT 10;\n\n-- Solution 3: Optimistic locking with version column\nUPDATE orders SET status='processed', version=version+1\nWHERE id=1 AND version=5;",
+    "related_concepts": ["Pessimistic Locking", "Optimistic Locking", "MVCC", "Deadlock Detection"],
+    "practice_problems": ["Design Dining Philosophers Solution", "LeetCode 1195 - Fizz Buzz Multithreaded"],
+    "tags": ["sql", "java", "concurrency", "deadlock", "transactions", "locking"]
+  },
+  {
+    "id": "err_017",
+    "error_type": "N+1 Query Problem",
+    "language": "SQL / ORM",
+    "concept": "Database Performance",
+    "description": "The N+1 problem occurs when code executes 1 query to get a list of N items, then N additional queries to fetch related data for each item — resulting in N+1 total queries and catastrophic performance.",
+    "common_causes": [
+      "Lazy loading in ORMs (Hibernate, SQLAlchemy, TypeORM)",
+      "Accessing relationships inside loops",
+      "Missing JOIN or eager loading configuration"
+    ],
+    "fix": "Use eager loading (JOIN FETCH in JPQL, include in Sequelize, select_related in Django). Use batch fetching. Use DataLoader pattern for GraphQL.",
+    "code_example": "# Django ORM - N+1 Problem\nauthors = Author.objects.all()  # 1 query\nfor author in authors:\n    print(author.books.count())  # N queries!",
+    "fix_code": "# Django - Fix with select_related / prefetch_related\nauthors = Author.objects.prefetch_related('books').all()  # 2 queries total\nfor author in authors:\n    print(author.books.count())  # No extra queries!",
+    "related_concepts": ["Eager Loading", "Lazy Loading", "JOIN", "DataLoader", "Query Optimization"],
+    "practice_problems": ["Design Optimized Book-Author API", "Implement DataLoader Pattern"],
+    "tags": ["sql", "orm", "performance", "n+1", "django", "hibernate"]
+  },
+  {
+    "id": "err_018",
+    "error_type": "OOMKilled (Exit Code 137)",
+    "language": "Docker / Kubernetes",
+    "concept": "Memory Management",
+    "description": "Container or pod is killed by the OOM (Out Of Memory) killer because it exceeded its memory limit. Exit code 137 = SIGKILL, typically from OOM killer.",
+    "common_causes": [
+      "Memory limit set too low for workload",
+      "Memory leak in application",
+      "Unbounded data processing (streaming large files into memory)",
+      "Missing resource limits in pod spec"
+    ],
+    "fix": "Set appropriate memory limits and requests. Fix memory leaks using profiling tools. Use streaming for large data. Monitor with metrics + alerts.",
+    "code_example": "# Pod keeps restarting with OOMKilled\n# kubectl describe pod my-pod shows: OOMKilled",
+    "fix_code": "# Set proper resource limits in k8s:\nresources:\n  requests:\n    memory: '256Mi'\n  limits:\n    memory: '512Mi'\n\n# Stream large files instead of loading all into memory:\nwith open('large_file.csv', 'r') as f:\n    for chunk in pd.read_csv(f, chunksize=1000):\n        process(chunk)",
+    "related_concepts": ["Resource Limits", "Memory Profiling", "Streaming", "Kubernetes Resources"],
+    "practice_problems": ["Design Memory-Efficient Stream Processor"],
+    "tags": ["docker", "kubernetes", "memory", "oom", "devops", "container"]
+  },
+  {
+    "id": "err_019",
+    "error_type": "ConnectionRefusedError",
+    "language": "Python / Networking",
+    "concept": "Network Connectivity",
+    "description": "Raised when a network connection attempt is actively refused by the target host. The server is not listening on the specified port.",
+    "common_causes": [
+      "Service not started on the target port",
+      "Wrong host/port configuration",
+      "Firewall blocking the connection",
+      "Service crashed or not yet ready during startup"
+    ],
+    "fix": "Verify the service is running and listening. Check .env / config for correct host:port. Implement retry logic with exponential backoff for startup race conditions.",
+    "code_example": "import socket\ns = socket.connect(('localhost', 5432))  # DB not started!",
+    "fix_code": "import time\nimport socket\n\ndef connect_with_retry(host, port, retries=5, delay=2):\n    for attempt in range(retries):\n        try:\n            sock = socket.socket()\n            sock.connect((host, port))\n            return sock\n        except ConnectionRefusedError:\n            print(f'Attempt {attempt+1}/{retries} failed, retry in {delay}s')\n            time.sleep(delay * (2 ** attempt))  # Exponential backoff\n    raise ConnectionRefusedError(f'Cannot connect to {host}:{port}')",
+    "related_concepts": ["Retry Logic", "Exponential Backoff", "Health Checks", "Circuit Breaker"],
+    "practice_problems": ["Implement Circuit Breaker Pattern", "Design Resilient HTTP Client"],
+    "tags": ["python", "networking", "connection", "retry", "microservices"]
+  },
+  {
+    "id": "err_020",
+    "error_type": "ConcurrentModificationException",
+    "language": "Java",
+    "concept": "Fail-Fast Iterators",
+    "description": "Thrown when a collection is modified while iterating over it using an iterator. Java's fail-fast iterators detect structural modification and throw this exception.",
+    "common_causes": [
+      "Removing elements from a list inside a for-each loop",
+      "Adding elements to a collection while iterating",
+      "Multi-threaded access without synchronization"
+    ],
+    "fix": "Use Iterator.remove() instead of collection.remove(). Use CopyOnWriteArrayList for concurrent use. Collect elements to remove separately, then remove after iteration.",
+    "code_example": "List<Integer> list = new ArrayList<>(Arrays.asList(1,2,3,4));\nfor (Integer i : list) {\n    if (i % 2 == 0) list.remove(i); // ConcurrentModificationException!\n}",
+    "fix_code": "// Fix 1: Iterator.remove()\nIterator<Integer> it = list.iterator();\nwhile (it.hasNext()) {\n    if (it.next() % 2 == 0) it.remove(); // Safe!\n}\n\n// Fix 2: removeIf (Java 8+)\nlist.removeIf(i -> i % 2 == 0);\n\n// Fix 3: Stream filter\nList<Integer> result = list.stream()\n    .filter(i -> i % 2 != 0)\n    .collect(Collectors.toList());",
+    "related_concepts": ["Iterators", "Fail-Fast vs Fail-Safe", "CopyOnWriteArrayList", "Stream API"],
+    "practice_problems": ["LeetCode 27 - Remove Element", "LeetCode 283 - Move Zeroes"],
+    "tags": ["java", "collections", "iterator", "concurrent", "modification"]
+  },
+  {
+    "id": "err_021",
+    "error_type": "ImportError / ModuleNotFoundError",
+    "language": "Python",
+    "concept": "Module System",
+    "description": "Raised when Python cannot locate the specified module. ModuleNotFoundError is a subclass of ImportError for missing modules.",
+    "common_causes": [
+      "Package not installed in current virtual environment",
+      "Wrong package name (PyPI name differs from import name)",
+      "Virtual environment not activated",
+      "Circular imports between modules"
+    ],
+    "fix": "Install the missing package via pip. Activate the virtual environment. Check import name vs pip install name. Restructure circular imports using lazy imports.",
+    "code_example": "import numpy  # ModuleNotFoundError: No module named 'numpy'",
+    "fix_code": "# 1. Install the package\n# pip install numpy\n\n# 2. Verify environment\n# python -m pip list | grep numpy\n\n# 3. For circular imports, use lazy import\ndef get_module():\n    import heavy_module  # Imported lazily inside function\n    return heavy_module",
+    "related_concepts": ["Virtual Environments", "pip", "Module Resolution", "Circular Imports"],
+    "practice_problems": ["Design Plugin System", "Implement Dependency Injection"],
+    "tags": ["python", "import", "module", "pip", "venv"]
+  },
+  {
+    "id": "err_022",
+    "error_type": "CORS Error",
+    "language": "Web (HTTP)",
+    "concept": "Browser Security Policy",
+    "description": "Cross-Origin Resource Sharing (CORS) error occurs when a browser blocks a frontend web page from making requests to a different domain due to the Same-Origin Policy.",
+    "common_causes": [
+      "Frontend on localhost:3000 calling API on localhost:8000 without CORS config",
+      "Missing Access-Control-Allow-Origin header on server",
+      "Preflight OPTIONS request rejected",
+      "Credentials (cookies) sent cross-origin without explicit allow"
+    ],
+    "fix": "Configure CORS middleware on the backend to allow specific origins. For FastAPI, use CORSMiddleware. Never use wildcard (*) for credentialed requests.",
+    "code_example": "// Browser console:\n// Access to fetch at 'http://localhost:8000/api/' from origin\n// 'http://localhost:3000' has been blocked by CORS policy",
+    "fix_code": "# FastAPI CORS fix:\nfrom fastapi.middleware.cors import CORSMiddleware\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=['http://localhost:3000', 'http://localhost:5173'],\n    allow_credentials=True,\n    allow_methods=['*'],\n    allow_headers=['*'],\n)",
+    "related_concepts": ["Same-Origin Policy", "Preflight Request", "HTTP Headers", "API Security"],
+    "practice_problems": ["Design Secure API Gateway"],
+    "tags": ["web", "http", "cors", "browser", "security", "fastapi"]
+  },
+  {
+    "id": "err_023",
+    "error_type": "OutOfMemoryError: Java heap space",
+    "language": "Java",
+    "concept": "JVM Memory Management",
+    "description": "Thrown when the JVM cannot allocate an object in the heap because the heap is exhausted and garbage collection cannot free sufficient memory.",
+    "common_causes": [
+      "Memory leak (objects not released, growing collections)",
+      "Loading entire large file into memory",
+      "Heap size configured too small for workload",
+      "Infinite loop creating objects"
+    ],
+    "fix": "Increase heap size with -Xmx flag. Fix memory leaks using heap profiler (VisualVM, JProfiler). Use streaming APIs for large data. Analyze with GC logs.",
+    "code_example": "List<byte[]> list = new ArrayList<>();\nwhile (true) {\n    list.add(new byte[1024 * 1024]); // Growing forever!\n}",
+    "fix_code": "// 1. Increase JVM heap:\n// java -Xmx4g -jar app.jar\n\n// 2. Stream large files instead of loading all:\ntry (BufferedReader br = Files.newBufferedReader(path)) {\n    br.lines().forEach(line -> process(line)); // Streaming - O(1) memory\n}\n\n// 3. Use WeakReference for caches:\nMap<Key, WeakReference<Value>> cache = new WeakHashMap<>();",
+    "related_concepts": ["JVM Memory", "Garbage Collection", "Memory Profiling", "WeakReference", "Heap Dumps"],
+    "practice_problems": ["Implement Memory-Efficient LRU Cache", "LeetCode 146 - LRU Cache"],
+    "tags": ["java", "jvm", "memory", "heap", "oom", "gc"]
+  },
+  {
+    "id": "err_024",
+    "error_type": "Race Condition",
+    "language": "Python / Java",
+    "concept": "Thread Safety",
+    "description": "A race condition occurs when the behavior of a program depends on the sequence or timing of uncontrollable events like thread execution order, leading to non-deterministic bugs.",
+    "common_causes": [
+      "Multiple threads reading and writing shared state without synchronization",
+      "Check-then-act operations that are not atomic",
+      "Missing locks around critical sections"
+    ],
+    "fix": "Use locks (threading.Lock in Python, synchronized in Java). Use thread-safe data structures. Use atomic operations. Prefer immutable state.",
+    "code_example": "counter = 0\ndef increment():\n    global counter\n    counter += 1  # NOT atomic! Race condition here",
+    "fix_code": "import threading\n\ncounter = 0\nlock = threading.Lock()\n\ndef increment():\n    global counter\n    with lock:  # Thread-safe\n        counter += 1\n\n# Or use atomic operations:\nfrom threading import Lock\nfrom collections import Counter\nthread_safe_counter = Counter()  # Some operations are atomic in CPython",
+    "related_concepts": ["Mutex", "Locks", "Atomic Operations", "Thread Safety", "GIL in Python"],
+    "practice_problems": ["LeetCode 1114 - Print in Order", "LeetCode 1115 - Print FooBar Alternately"],
+    "tags": ["python", "java", "threading", "concurrency", "race-condition", "locks"]
+  },
+  {
+    "id": "err_025",
+    "error_type": "SyntaxError",
+    "language": "Python",
+    "concept": "Language Grammar",
+    "description": "Raised by the Python parser when code doesn't conform to the Python language grammar. Code with a SyntaxError cannot be executed at all.",
+    "common_causes": [
+      "Missing colon after if/for/def/class statement",
+      "Mismatched parentheses or brackets",
+      "Wrong indentation (IndentationError is a subclass)",
+      "Using Python 2 print statement in Python 3"
+    ],
+    "fix": "Read the error message carefully — it usually points to the exact line. Use an IDE with syntax highlighting. Check indentation consistency (spaces vs tabs).",
+    "code_example": "def greet(name)\n    print(f'Hello {name}')  # SyntaxError: expected ':'",
+    "fix_code": "def greet(name):  # Added colon\n    print(f'Hello {name}')\n\ngreet('World')",
+    "related_concepts": ["Python Grammar", "Indentation", "IDE tools", "Linting"],
+    "practice_problems": ["Write a Python Linter", "Build a Simple Parser"],
+    "tags": ["python", "syntax", "parser", "grammar", "indent"]
+  }
+]
