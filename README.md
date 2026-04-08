@@ -1,18 +1,20 @@
-# EKIA-2: AI Debugging Assistant
+# EKIA: AI Debugging Assistant
 
 <div align="center">
 
 ```
-  ███████╗██╗  ██╗██╗ █████╗ 
+  ███████╗██╗  ██╗██╗ █████╗
   ██╔════╝██║ ██╔╝██║██╔══██╗
-  █████╗  █████╔╝ ██║███████║   
-  ██╔══╝  ██╔═██╗ ██║██╔══██║ 
+  █████╗  █████╔╝ ██║███████║
+  ██╔══╝  ██╔═██╗ ██║██╔══██║
   ███████╗██║  ██╗██║██║  ██║
-  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝     
+  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝
 ```
 
 **Production-grade AI Debugging Assistant**
 *LangGraph · Llama3 (Ollama) · FAISS · Neo4j GraphRAG · FastAPI · React*
+
+**EKIA** — Error & Knowledge Intelligence Assistant
 
 </div>
 
@@ -272,12 +274,12 @@ Covers **25 errors** across Java, Python, JavaScript, React, C++, SQL, Docker/K8
 
 ## Features
 
-- 🧠 **Local AI** — Llama3 via Ollama, zero API cost
-- 🔍 **Hybrid Retrieval** — FAISS semantic search + Neo4j graph traversal
-- 📊 **Observability** — Every session traced and scored in Langfuse
-- 🎨 **Premium UI** — Dark mode, glassmorphism, animated graph visualization
-- 🏗️ **Production Ready** — Pydantic schemas, proper error handling, Docker support
-- 📚 **25 Error Knowledge Base** — Java, Python, JS, C++, SQL, Docker errors
+- **Local AI** — Llama3 via Ollama, zero API cost
+- **Hybrid Retrieval** — FAISS semantic search + Neo4j graph traversal
+- **Observability** — Every session traced and scored in Langfuse
+- **Premium UI** — Dark mode, glassmorphism, animated graph visualization
+- **Production Ready** — Pydantic schemas, proper error handling, Docker support
+- **25 Error Knowledge Base** — Java, Python, JS, C++, SQL, Docker errors
 
 ---
 
