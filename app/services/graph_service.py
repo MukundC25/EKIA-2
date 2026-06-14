@@ -1,7 +1,4 @@
-"""
-App Services — Graph Service
-Neo4j driver + graph query interface for GraphRAG.
-"""
+"""Graph Service — Neo4j driver and query interface for GraphRAG."""
 import os
 from typing import Optional
 from neo4j import GraphDatabase, Driver
@@ -41,10 +38,7 @@ class GraphService:
         return self._driver is not None
 
     def search_errors(self, error_name: str, depth: int = 2) -> list[dict]:
-        """
-        GraphRAG traversal: find errors, their causes, fixes, and related problems.
-        Returns structured graph context for the LLM.
-        """
+        """GraphRAG traversal: find errors, causes, fixes, and related problems."""
         if not self._driver:
             return []
 
@@ -82,9 +76,7 @@ class GraphService:
             return []
 
     def get_full_graph(self, limit: int = 100) -> dict:
-        """
-        Retrieve nodes and edges for graph visualization in the frontend.
-        """
+        """Retrieve nodes and edges for graph visualization."""
         if not self._driver:
             return {"nodes": [], "edges": []}
 
@@ -98,12 +90,10 @@ class GraphService:
             database = os.getenv("NEO4J_DATABASE", "neo4j")
             with self._driver.session(database=database) as session:
                 result = session.run(query, limit=limit)
-
                 nodes_map = {}
                 edges = []
 
                 for record in result:
-                    # Source node
                     n = record["n"]
                     n_id = str(n.element_id)
                     if n_id not in nodes_map:
@@ -115,7 +105,6 @@ class GraphService:
                             "properties": dict(n),
                         }
 
-                    # Target node
                     m = record["m"]
                     m_id = str(m.element_id)
                     if m_id not in nodes_map:
@@ -133,10 +122,7 @@ class GraphService:
                         "relationship": record["rel_type"],
                     })
 
-                return {
-                    "nodes": list(nodes_map.values()),
-                    "edges": edges,
-                }
+                return {"nodes": list(nodes_map.values()), "edges": edges}
         except Exception as e:
             print(f"[GraphService] get_full_graph error: {e}")
             return {"nodes": [], "edges": []}
@@ -160,5 +146,4 @@ class GraphService:
             return {"connected": False, "error": str(e)}
 
 
-# Singleton instance
 graph_service = GraphService()

@@ -1,6 +1,4 @@
-"""
-Graph Layer — Neo4j Graph Ingestion Script
-Seeds Neo4j with the entire error knowledge base as a knowledge graph.
+"""Neo4j Graph Ingestion — Seeds Neo4j with the error knowledge base as a knowledge graph.
 Run with: python -m graph.ingest_graph
 """
 import json
@@ -50,13 +48,8 @@ def ingest_error(session, error: dict):
     concept = error["concept"]
     fix_id = error["id"].replace("err_", "fix_")
 
-    # Upsert Language node
-    session.run(
-        "MERGE (l:Language {name: $language})",
-        language=language
-    )
+    session.run("MERGE (l:Language {name: $language})", language=language)
 
-    # Upsert Error node
     session.run(
         """
         MERGE (e:Error {name: $name})
@@ -70,13 +63,8 @@ def ingest_error(session, error: dict):
         tags=",".join(error.get("tags", [])),
     )
 
-    # Upsert Concept node
-    session.run(
-        "MERGE (c:Concept {name: $concept})",
-        concept=concept
-    )
+    session.run("MERGE (c:Concept {name: $concept})", concept=concept)
 
-    # Upsert Fix node
     session.run(
         """
         MERGE (f:Fix {id: $fix_id})
@@ -88,14 +76,9 @@ def ingest_error(session, error: dict):
         code_tip=error.get("fix_code", ""),
     )
 
-    # Upsert Problem nodes
     for problem_name in error.get("practice_problems", []):
-        session.run(
-            "MERGE (p:Problem {name: $name})",
-            name=problem_name
-        )
+        session.run("MERGE (p:Problem {name: $name})", name=problem_name)
 
-    # Create relationships
     session.run(
         "MATCH (e:Error {name: $e}), (c:Concept {name: $c}) MERGE (e)-[:CAUSED_BY]->(c)",
         e=error_name, c=concept
@@ -145,7 +128,6 @@ def main():
                     print(f"  [{i:02d}/{len(errors)}] ✗ Failed {error['error_type']}: {e}")
 
             print("\n[Graph] ✅ Ingestion complete!")
-            print(f"[Graph] Nodes: run `MATCH (n) RETURN count(n)` in Neo4j Browser to verify")
 
     except Exception as e:
         print(f"[Graph] ❌ Connection failed: {e}")

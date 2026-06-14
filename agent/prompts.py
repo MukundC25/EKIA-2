@@ -1,10 +1,4 @@
-"""
-EKIA-2 Prompt Templates — All prompts used by the LangGraph agent
-"""
-
-# =============================================================================
-# SYSTEM PROMPT — Core Agent Identity
-# =============================================================================
+"""EKIA-2 Prompt Templates — All prompts used by the LangGraph agent."""
 
 SYSTEM_PROMPT = """You are EKIA, an expert AI Debugging Assistant designed for software engineers at all levels.
 
@@ -32,10 +26,6 @@ CONFIDENCE SCORING:
 - 0.0 - 0.49: Low confidence, insufficient data — be explicit about limitations
 """
 
-# =============================================================================
-# OUTPUT FORMAT PROMPT
-# =============================================================================
-
 OUTPUT_FORMAT_PROMPT = """You MUST respond with ONLY valid JSON matching this exact schema. No markdown, no extra text.
 
 {{
@@ -50,10 +40,6 @@ OUTPUT_FORMAT_PROMPT = """You MUST respond with ONLY valid JSON matching this ex
 }}
 
 IMPORTANT: Ensure all string values are properly escaped. All arrays must have at least 1 item."""
-
-# =============================================================================
-# QUERY REWRITING PROMPT
-# =============================================================================
 
 QUERY_REWRITE_PROMPT = """You are a query analysis expert. Extract structured information from the user's debugging query.
 
@@ -72,10 +58,6 @@ Rules:
 - rewritten_query should be optimized for semantic similarity search
 - If language cannot be determined, use "unknown"
 """
-
-# =============================================================================
-# REASONING PROMPT
-# =============================================================================
 
 REASONING_PROMPT = """You are EKIA, an expert AI Debugging Assistant.
 
@@ -97,10 +79,6 @@ Using the evidence above, analyze this error and provide a comprehensive debuggi
 
 {system_rules}
 """
-
-# =============================================================================
-# VALIDATION PROMPT
-# =============================================================================
 
 VALIDATION_PROMPT = """Review this debugging response for quality and correctness:
 

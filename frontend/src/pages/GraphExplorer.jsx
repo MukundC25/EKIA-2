@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import GraphVisualization from '../components/GraphVisualization';
-import { getFullGraph, getGraphStats } from '../services/api';
-import { Network, RefreshCw, AlertCircle } from 'lucide-react';
+import { getFullGraph, getGraphStats, searchGraph } from '../services/api';
+import { Network, RefreshCw, AlertCircle, Search } from 'lucide-react';
 
 const STAT_COLORS = {
   errors:        'var(--color-error)',
@@ -17,6 +17,9 @@ export default function GraphExplorer() {
   const [stats,     setStats]     = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [isDemo,    setIsDemo]    = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searching, setSearching] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -29,6 +32,21 @@ export default function GraphExplorer() {
       console.error('Graph load error:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim() || isDemo) return;
+    setSearching(true);
+    try {
+      const results = await searchGraph(searchQuery.trim());
+      setSearchResults(results);
+    } catch (err) {
+      console.error('Graph search error:', err);
+      setSearchResults({ results: [], count: 0, query: searchQuery });
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -113,6 +131,45 @@ export default function GraphExplorer() {
                   {value ?? '—'}
                 </div>
                 <div className="stat-label">{key}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Graph Search */}
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Search graph for an error (e.g. NullPointerException)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isDemo || searching}
+              style={{ paddingLeft: 34 }}
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn btn-primary btn-sm"
+            disabled={isDemo || searching || !searchQuery.trim()}
+          >
+            {searching ? 'Searching...' : 'Search'}
+          </button>
+        </form>
+
+        {/* Search Results */}
+        {searchResults && searchResults.results && (
+          <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+              Found {searchResults.count} result{searchResults.count !== 1 ? 's' : ''} for "{searchResults.query}"
+            </div>
+            {searchResults.results.slice(0, 5).map((item, i) => (
+              <div key={i} style={{ padding: '8px 0', borderTop: i > 0 ? '1px solid var(--border-subtle)' : 'none', fontSize: 13, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                {item.error && <span style={{ color: 'var(--color-error)' }}>Error: <strong>{item.error.name}</strong></span>}
+                {item.concept && <span style={{ color: 'var(--color-info)' }}>Concept: {item.concept.name}</span>}
+                {item.fix && <span style={{ color: 'var(--color-success)' }}>Fix: {item.fix.description}</span>}
               </div>
             ))}
           </div>

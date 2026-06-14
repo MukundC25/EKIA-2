@@ -1,9 +1,4 @@
-"""
-FastAPI Routes — Graph endpoints
-GET /api/graph — Full graph for visualization
-GET /api/graph/search — Search graph for specific error
-GET /api/graph/stats — Graph database statistics
-"""
+"""Graph endpoints — Knowledge graph visualization and search."""
 from fastapi import APIRouter, Query, HTTPException
 from app.services.graph_service import graph_service
 from app.models.schemas import GraphQueryResponse, GraphNode, GraphEdge
@@ -13,16 +8,13 @@ router = APIRouter(prefix="/api/graph", tags=["graph"])
 
 @router.get("/", summary="Get full knowledge graph for visualization")
 async def get_full_graph(limit: int = Query(default=100, ge=10, le=500)):
-    """
-    Returns all nodes and edges for the force-directed graph visualization.
-    Used by the React frontend GraphExplorer page.
-    """
+    """Returns all nodes and edges for the force-directed graph visualization."""
     if not graph_service.is_connected:
         return {
             "nodes": _get_demo_nodes(),
             "edges": _get_demo_edges(),
             "demo_mode": True,
-            "message": "Neo4j not connected — showing demo data. Start Neo4j Desktop to see real graph.",
+            "message": "Neo4j not connected — showing demo data.",
         }
 
     data = graph_service.get_full_graph(limit=limit)
@@ -48,13 +40,8 @@ async def search_graph(
 @router.get("/stats", summary="Graph database statistics")
 async def get_graph_stats():
     """Returns node and relationship counts for the knowledge graph."""
-    stats = graph_service.get_stats()
-    return stats
+    return graph_service.get_stats()
 
-
-# ---------------------------------------------------------------------------
-# Demo data (shown when Neo4j is unavailable)
-# ---------------------------------------------------------------------------
 
 def _get_demo_nodes():
     return [

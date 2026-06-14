@@ -1,7 +1,4 @@
-"""
-FastAPI Routes — Debug endpoint
-POST /api/debug — Main debug pipeline entry point
-"""
+"""Debug endpoint — POST /api/debug"""
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 import time
@@ -14,17 +11,7 @@ router = APIRouter(prefix="/api", tags=["debug"])
 
 @router.post("/debug", response_model=DebugResponse, summary="Debug an error using AI")
 async def debug_error(request: DebugRequest, background_tasks: BackgroundTasks):
-    """
-    Analyze an error using the full EKIA pipeline:
-    - Query parsing & language detection
-    - FAISS semantic retrieval
-    - Neo4j GraphRAG context
-    - Llama3 reasoning via Ollama
-    - Response validation
-    - Langfuse tracing & scoring
-
-    Returns a structured JSON with root cause, fix, concepts, and practice problems.
-    """
+    """Analyze an error using the full EKIA agent pipeline."""
     start = time.time()
 
     try:
@@ -45,9 +32,9 @@ async def debug_error(request: DebugRequest, background_tasks: BackgroundTasks):
         )
 
 
-@router.get("/debug/history", summary="Get recent debug sessions (placeholder)")
+@router.get("/debug/history", summary="Get recent debug sessions")
 async def get_debug_history():
-    """Returns mock history — integrate with a real DB for production."""
+    """Returns debug session history."""
     return JSONResponse(content={
         "sessions": [],
         "message": "History persistence coming soon. Connect Langfuse for full trace history.",

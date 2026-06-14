@@ -1,7 +1,4 @@
-"""
-EKIA-2 — LangGraph Agent Pipeline
-5-node StateGraph: parse_query → retrieve → reason → validate → respond
-"""
+"""LangGraph Agent Pipeline — 5-node StateGraph: parse → retrieve → reason → validate → respond"""
 import json
 import re
 from typing import TypedDict, Optional, Any
@@ -14,39 +11,25 @@ from agent.prompts import (
     OUTPUT_FORMAT_PROMPT,
     QUERY_REWRITE_PROMPT,
     REASONING_PROMPT,
-    VALIDATION_PROMPT,
 )
 from rag.retriever import retrieve_vector_context, format_vector_context
 
 
-# =============================================================================
-# Agent State Definition
-# =============================================================================
-
 class AgentState(TypedDict):
-    # Input
     raw_input: str
     language: str
     context: str
     code_snippet: str
-
-    # Processing
     parsed_query: dict
     vector_results: list
     graph_results: list
     vector_context_str: str
     graph_context_str: str
-
-    # Output
     reasoning_output: dict
     final_response: dict
     error: Optional[str]
     trace_id: Optional[str]
 
-
-# =============================================================================
-# LLM Factory
-# =============================================================================
 
 def get_llm() -> ChatOllama:
     import os
@@ -54,20 +37,18 @@ def get_llm() -> ChatOllama:
         model=os.getenv("OLLAMA_MODEL", "llama3"),
         base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         temperature=0.1,
-        format="json",  # Force JSON output mode
+        format="json",
     )
 
 
 def extract_json(text: str) -> dict:
     """Robustly extract JSON from LLM response text."""
     text = text.strip()
-    # Try direct parse first
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Try to find JSON block in text
     json_match = re.search(r'\{.*\}', text, re.DOTALL)
     if json_match:
         try:
@@ -75,7 +56,6 @@ def extract_json(text: str) -> dict:
         except json.JSONDecodeError:
             pass
 
-    # Return structured fallback
     return {
         "error": "Parse Error",
         "root_cause": text[:500] if text else "LLM returned non-JSON response",
@@ -88,10 +68,6 @@ def extract_json(text: str) -> dict:
     }
 
 
-# =============================================================================
-# Node 1: parse_query
-# =============================================================================
-
 def parse_query_node(state: AgentState) -> AgentState:
     """Rewrite and structure the raw user query."""
     try:
@@ -100,7 +76,6 @@ def parse_query_node(state: AgentState) -> AgentState:
         response = llm.invoke([HumanMessage(content=prompt)])
         parsed = extract_json(response.content)
 
-        # Override with user-provided language/context if given
         if state.get("language") and state["language"] != "other":
             parsed["language"] = state["language"]
         if state.get("context"):
@@ -119,16 +94,11 @@ def parse_query_node(state: AgentState) -> AgentState:
     return state
 
 
-# =============================================================================
-# Node 2: retrieve
-# =============================================================================
-
 def retrieve_node(state: AgentState) -> AgentState:
     """Retrieve relevant context from FAISS vector store and Neo4j graph."""
     parsed = state.get("parsed_query", {})
     search_query = parsed.get("rewritten_query", state["raw_input"])
 
-    # Vector retrieval
     try:
         vector_results = retrieve_vector_context(search_query, k=5)
         state["vector_results"] = vector_results
@@ -139,8 +109,6 @@ def retrieve_node(state: AgentState) -> AgentState:
         state["vector_results"] = []
         state["vector_context_str"] = "Vector retrieval unavailable."
 
-    # Graph retrieval — handled by graph_service at the service level
-    # Here we use any pre-fetched graph results
     graph_results = state.get("graph_results", [])
     if graph_results:
         graph_str = json.dumps(graph_results, indent=2)
@@ -150,10 +118,6 @@ def retrieve_node(state: AgentState) -> AgentState:
 
     return state
 
-
-# =============================================================================
-# Node 3: reason
-# =============================================================================
 
 def reason_node(state: AgentState) -> AgentState:
     """Call Ollama/Llama3 to analyze the error using retrieved context."""
@@ -191,15 +155,10 @@ def reason_node(state: AgentState) -> AgentState:
     return state
 
 
-# =============================================================================
-# Node 4: validate
-# =============================================================================
-
 def validate_node(state: AgentState) -> AgentState:
     """Validate and sanitize the reasoning output structure."""
     reasoning = state.get("reasoning_output", {})
 
-    # Ensure all required fields exist
     required_fields = {
         "error": state.get("parsed_query", {}).get("error_type", "Unknown"),
         "root_cause": "Unable to determine root cause.",
@@ -212,17 +171,13 @@ def validate_node(state: AgentState) -> AgentState:
     }
 
     validated = {**required_fields, **reasoning}
-
-    # Clamp confidence score
     validated["confidence_score"] = max(0.0, min(1.0, float(validated.get("confidence_score", 0.5))))
 
-    # Ensure arrays
     if not isinstance(validated["related_concepts"], list):
         validated["related_concepts"] = []
     if not isinstance(validated["practice_problems"], list):
         validated["practice_problems"] = []
 
-    # Enrich with vector retrieval sources
     sources = []
     for result in state.get("vector_results", [])[:3]:
         meta = result.get("metadata", {})
@@ -235,10 +190,6 @@ def validate_node(state: AgentState) -> AgentState:
     return state
 
 
-# =============================================================================
-# Node 5: respond
-# =============================================================================
-
 def respond_node(state: AgentState) -> AgentState:
     """Package the final response."""
     reasoning = state.get("reasoning_output", {})
@@ -250,10 +201,6 @@ def respond_node(state: AgentState) -> AgentState:
     print(f"[Agent] Final response ready for: {reasoning.get('error', '?')}")
     return state
 
-
-# =============================================================================
-# Graph Compilation
-# =============================================================================
 
 def build_agent_graph():
     """Build and compile the LangGraph StateGraph."""
@@ -275,5 +222,4 @@ def build_agent_graph():
     return workflow.compile()
 
 
-# Module-level compiled graph (singleton)
 agent_graph = build_agent_graph()

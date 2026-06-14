@@ -1,7 +1,4 @@
-"""
-RAG Layer — FAISS Vector Store management
-Handles building, persisting, and loading the FAISS index from the error knowledge base
-"""
+"""FAISS Vector Store — Build, persist, and load the index from the error knowledge base."""
 import os
 import json
 from pathlib import Path
@@ -29,7 +26,6 @@ def _load_knowledge_base_as_documents() -> list[Document]:
 
     documents = []
     for error in errors:
-        # Build rich text content for each error entry
         content = (
             f"Error: {error['error_type']}\n"
             f"Language: {error['language']}\n"
@@ -64,7 +60,7 @@ def _load_knowledge_base_as_documents() -> list[Document]:
 
 
 def build_vector_store() -> FAISS:
-    """Build FAISS index from scratch and persist it to disk."""
+    """Build FAISS index from scratch and persist to disk."""
     documents = _load_knowledge_base_as_documents()
     embeddings = get_embeddings()
 
@@ -79,7 +75,7 @@ def build_vector_store() -> FAISS:
 
 
 def load_vector_store() -> Optional[FAISS]:
-    """Load existing FAISS index from disk, or build a new one if it doesn't exist."""
+    """Load existing FAISS index from disk, or build a new one if missing."""
     embeddings = get_embeddings()
     index_path = Path(FAISS_INDEX_PATH)
 

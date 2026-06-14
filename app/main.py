@@ -1,6 +1,4 @@
-"""
-EKIA-2 FastAPI Application Entry Point
-"""
+"""EKIA-2 FastAPI Application Entry Point"""
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -9,39 +7,29 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
-# App Lifespan (startup / shutdown)
-# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize all services on startup."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("  EKIA-2 — AI Debugging Assistant")
-    print("="*60)
+    print("=" * 60)
 
-    # Initialize RAG service (loads FAISS index)
     from app.services.rag_service import rag_service
     rag_service.initialize()
 
-    # Initialize Graph service (connect to Neo4j)
     from app.services.graph_service import graph_service
     graph_service.connect()
 
-    print("="*60)
+    print("=" * 60)
     print("  EKIA-2 ready. API docs: http://localhost:8000/docs")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
-    yield  # App runs here
+    yield
 
-    # Shutdown
     graph_service.close()
     print("[App] Shutdown complete.")
 
-
-# ---------------------------------------------------------------------------
-# FastAPI App
-# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="EKIA-2 AI Debugging Assistant",
@@ -56,10 +44,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ---------------------------------------------------------------------------
-# CORS Middleware
-# ---------------------------------------------------------------------------
-
 cors_origins = os.getenv(
     "CORS_ORIGINS", "http://localhost:5173,http://localhost:3000"
 ).split(",")
@@ -72,19 +56,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# Routers
-# ---------------------------------------------------------------------------
-
 from app.routes.debug import router as debug_router
 from app.routes.graph import router as graph_router
 
 app.include_router(debug_router)
 app.include_router(graph_router)
 
-# ---------------------------------------------------------------------------
-# Health Check
-# ---------------------------------------------------------------------------
 
 @app.get("/health", tags=["health"])
 async def health_check():

@@ -1,11 +1,7 @@
-"""
-RAG Layer — Hybrid Retriever
-Combines FAISS semantic search + Neo4j graph context for comprehensive retrieval
-"""
+"""RAG Retriever — FAISS semantic search interface."""
 from typing import Optional
 from langchain_community.vectorstores import FAISS
 from rag.vector_store import load_vector_store
-
 
 _vectorstore: Optional[FAISS] = None
 
@@ -19,10 +15,7 @@ def get_vectorstore() -> FAISS:
 
 
 def retrieve_vector_context(query: str, k: int = 5) -> list[dict]:
-    """
-    Perform semantic similarity search on FAISS index.
-    Returns top-k relevant error documents.
-    """
+    """Perform semantic similarity search on FAISS index."""
     vs = get_vectorstore()
     results = vs.similarity_search_with_score(query, k=k)
 
@@ -31,7 +24,7 @@ def retrieve_vector_context(query: str, k: int = 5) -> list[dict]:
         retrieval_results.append({
             "content": doc.page_content,
             "metadata": doc.metadata,
-            "similarity_score": float(score),  # Lower = more similar in FAISS L2
+            "similarity_score": float(score),
         })
 
     return retrieval_results
@@ -44,7 +37,6 @@ def format_vector_context(results: list[dict]) -> str:
 
     parts = []
     for i, result in enumerate(results, 1):
-        meta = result.get("metadata", {})
         parts.append(
             f"--- Source {i} (Similarity: {result['similarity_score']:.3f}) ---\n"
             f"{result['content']}\n"
@@ -54,6 +46,6 @@ def format_vector_context(results: list[dict]) -> str:
 
 
 def invalidate_cache():
-    """Force reload the vector store (e.g., after rebuilding the index)."""
+    """Force reload the vector store after rebuilding the index."""
     global _vectorstore
     _vectorstore = None

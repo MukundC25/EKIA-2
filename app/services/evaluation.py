@@ -1,10 +1,7 @@
-"""
-App Services — Evaluation Service (Langfuse observability)
-Wraps all agent calls with tracing, scoring, and evaluation.
-"""
+"""Evaluation Service — Langfuse observability, tracing, and scoring."""
 import os
 import time
-from typing import Optional, Any
+from typing import Any
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -102,10 +99,7 @@ class TraceContext:
                 value=completeness,
                 comment=f"Response completeness: fix={has_fix}, concepts={has_concepts}, problems={has_solutions}",
             )
-            self.trace.score(
-                name="overall_quality",
-                value=overall_score,
-            )
+            self.trace.score(name="overall_quality", value=overall_score)
             print(f"[Langfuse] Scored — overall: {overall_score:.2f}")
         except Exception as e:
             print(f"[Langfuse] Score failed: {e}")

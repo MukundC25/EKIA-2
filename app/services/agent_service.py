@@ -1,7 +1,5 @@
-"""
-App Services — Agent Service
-Orchestrates the full LangGraph pipeline for a single debug request.
-"""
+"""Agent Service — Orchestrates the full LangGraph pipeline for a debug request."""
+import asyncio
 from app.models.schemas import DebugRequest, DebugResponse
 from app.services.graph_service import graph_service
 from app.services.evaluation import TraceContext
@@ -12,10 +10,7 @@ class AgentService:
     """Orchestrates the full EKIA debug agent pipeline."""
 
     async def run(self, request: DebugRequest) -> DebugResponse:
-        """
-        Run the 5-node LangGraph pipeline asynchronously.
-        Wraps execution in a Langfuse trace for observability.
-        """
+        """Run the 5-node LangGraph pipeline with Langfuse tracing."""
         trace_input = {
             "error": request.error,
             "language": request.language.value if request.language else "other",
@@ -29,7 +24,6 @@ class AgentService:
             metadata={"language": request.language.value if request.language else "other"},
         ) as trace:
 
-            # Pre-fetch graph context (runs outside agent for speed)
             graph_results = []
             if graph_service.is_connected:
                 try:
@@ -38,7 +32,6 @@ class AgentService:
                 except Exception as e:
                     print(f"[AgentService] Graph retrieval failed: {e}")
 
-            # Build initial agent state
             initial_state = {
                 "raw_input": request.error,
                 "language": request.language.value if request.language else "other",
@@ -55,14 +48,11 @@ class AgentService:
                 "trace_id": trace.trace_id,
             }
 
-            # Run the LangGraph pipeline
-            final_state = agent_graph.invoke(initial_state)
+            final_state = await asyncio.to_thread(agent_graph.invoke, initial_state)
             result = final_state.get("final_response", {})
 
-            # Score in Langfuse
             trace.score_response(result)
 
-            # Build Pydantic response
             return DebugResponse(
                 error=result.get("error", request.error),
                 root_cause=result.get("root_cause", ""),
@@ -78,5 +68,4 @@ class AgentService:
             )
 
 
-# Singleton instance
 agent_service = AgentService()

@@ -1,7 +1,4 @@
-"""
-App Utils — Query Parser
-Extracts structured information from raw user error input.
-"""
+"""Query Parser — Extracts structured information from raw user error input."""
 import re
 from typing import Optional
 
@@ -47,11 +44,7 @@ LANGUAGE_PATTERNS = {
 
 
 def detect_language(text: str) -> Optional[str]:
-    """
-    Detect programming language from error text using pattern matching.
-    Returns the most likely language or None.
-    """
-    text_lower = text
+    """Detect programming language from error text using pattern matching."""
     scores: dict[str, int] = {}
 
     for lang, patterns in LANGUAGE_PATTERNS.items():
@@ -66,13 +59,7 @@ def detect_language(text: str) -> Optional[str]:
 
 
 def extract_error_type(text: str) -> str:
-    """
-    Extract the primary error type from text.
-    Handles formats like:
-    - "NullPointerException at UserService.java:42"
-    - "Error: Cannot read property 'x' of undefined"
-    - "Traceback...\nKeyError: 'name'"
-    """
+    """Extract the primary error type/name from text."""
     patterns = [
         r"([A-Z][a-zA-Z]+(?:Error|Exception|Fault|Warning|Problem))",
         r"^([A-Z][a-zA-Z]+Error):",
@@ -84,7 +71,6 @@ def extract_error_type(text: str) -> str:
         if match:
             return match.group(1).strip()
 
-    # Fallback: first line
     return text.split("\n")[0][:100].strip()
 
 
@@ -93,10 +79,7 @@ def parse_raw_input(
     language: Optional[str] = None,
     context: Optional[str] = None,
 ) -> dict:
-    """
-    Parse raw user error input into a structured query dict.
-    Used as a fast fallback if the LLM query rewriter fails.
-    """
+    """Parse raw user error input into a structured query dict."""
     detected_lang = language or detect_language(raw_input) or "unknown"
     error_type = extract_error_type(raw_input)
 
