@@ -145,5 +145,41 @@ class GraphService:
         except Exception as e:
             return {"connected": False, "error": str(e)}
 
+    def ingest_debug_result(self, error_name: str, language: str, root_cause: str, fix: str, related_concepts: list[str]) -> bool:
+        """Dynamically ingest an analyzed error into the Neo4j Knowledge Graph."""
+        if not self._driver or not error_name:
+            return False
+
+        query = """
+        MERGE (e:Error {name: $error_name})
+        ON CREATE SET e.id = toLower($error_name), e.language = $language
+        ON MATCH SET e.language = $language
+        
+        MERGE (f:Fix {description: $fix})
+        ON CREATE SET f.id = toLower($error_name) + '_fix'
+        
+        MERGE (e)-[:FIXED_BY]->(f)
+        
+        WITH e
+        UNWIND $related_concepts AS concept_name
+        MERGE (c:Concept {name: concept_name})
+        ON CREATE SET c.id = toLower(concept_name)
+        MERGE (e)-[:RELATED_TO]->(c)
+        """
+        
+        try:
+            database = os.getenv("NEO4J_DATABASE", "neo4j")
+            with self._driver.session(database=database) as session:
+                session.run(query, 
+                            error_name=error_name[:100], 
+                            language=language or "unknown",
+                            fix=fix[:500] if fix else "No fix provided.",
+                            related_concepts=[c[:50] for c in related_concepts] if related_concepts else [])
+                print(f"[GraphService] Successfully ingested '{error_name}' into graph.")
+                return True
+        except Exception as e:
+            print(f"[GraphService] Failed to ingest debug result: {e}")
+            return False
+
 
 graph_service = GraphService()

@@ -3,7 +3,7 @@ import json
 import re
 from typing import TypedDict, Optional, Any
 from langgraph.graph import StateGraph, END
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 from langchain.schema import HumanMessage, SystemMessage
 
 from agent.prompts import (
@@ -31,13 +31,11 @@ class AgentState(TypedDict):
     trace_id: Optional[str]
 
 
-def get_llm() -> ChatOllama:
-    import os
-    return ChatOllama(
-        model=os.getenv("OLLAMA_MODEL", "llama3"),
-        base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-        temperature=0.1,
-        format="json",
+def get_llm() -> ChatGroq:
+    """Initialize the Groq LLM (Llama 3)."""
+    return ChatGroq(
+        model="openai/gpt-oss-20b",
+        temperature=0.0
     )
 
 
@@ -120,7 +118,7 @@ def retrieve_node(state: AgentState) -> AgentState:
 
 
 def reason_node(state: AgentState) -> AgentState:
-    """Call Ollama/Llama3 to analyze the error using retrieved context."""
+    """Call Groq/Llama3 to analyze the error using retrieved context."""
     parsed = state.get("parsed_query", {})
 
     prompt = REASONING_PROMPT.format(
@@ -145,9 +143,9 @@ def reason_node(state: AgentState) -> AgentState:
         state["reasoning_output"] = {
             "error": parsed.get("error_type", "Unknown Error"),
             "root_cause": f"Analysis failed: {str(e)}",
-            "beginner_explanation": "The AI encountered an error during analysis.",
-            "technical_explanation": str(e),
-            "fix": "Please check Ollama is running: `ollama serve` and `ollama pull llama3`",
+            "beginner_explanation": f"LLM error: {str(e)}",
+            "technical_explanation": "Failed to connect to the LLM. Verify your GROQ_API_KEY.",
+            "fix": "Please check your GROQ_API_KEY in the .env file.",
             "related_concepts": [],
             "practice_problems": [],
             "confidence_score": 0.0,

@@ -52,6 +52,17 @@ class AgentService:
             result = final_state.get("final_response", {})
 
             trace.score_response(result)
+            if graph_service.is_connected:
+                asyncio.create_task(
+                    asyncio.to_thread(
+                        graph_service.ingest_debug_result,
+                        error_name=result.get("error", request.error),
+                        language=request.language.value if request.language else "other",
+                        root_cause=result.get("root_cause", ""),
+                        fix=result.get("fix", ""),
+                        related_concepts=result.get("related_concepts", []),
+                    )
+                )
 
             return DebugResponse(
                 error=result.get("error", request.error),

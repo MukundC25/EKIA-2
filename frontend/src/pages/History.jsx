@@ -1,10 +1,7 @@
 import { History as HistoryIcon, Clock, ExternalLink, BarChart3, Bug } from 'lucide-react';
 
-const MOCK_SESSIONS = [
-  { id: 1, error: 'NullPointerException',          language: 'Java',       confidence: 0.92, timestamp: '2 minutes ago',  trace_id: 'tr-abc123' },
-  { id: 2, error: "KeyError: 'user_id'",           language: 'Python',     confidence: 0.87, timestamp: '15 minutes ago', trace_id: 'tr-def456' },
-  { id: 3, error: 'Maximum update depth exceeded', language: 'React',      confidence: 0.78, timestamp: '1 hour ago',     trace_id: 'tr-ghi789' },
-];
+import { useState, useEffect } from 'react';
+import { getDebugHistory } from '../services/api';
 
 function ConfidenceBadge({ score }) {
   const pct = Math.round(score * 100);
@@ -35,7 +32,19 @@ const LANG_COLORS = {
 };
 
 export default function History() {
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const langfuseUrl = import.meta.env.VITE_LANGFUSE_HOST || 'https://cloud.langfuse.com';
+
+  useEffect(() => {
+    getDebugHistory()
+      .then((data) => {
+        setSessions(data.sessions || []);
+      })
+      .catch((err) => console.error("Failed to load history", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="main-content">
@@ -82,65 +91,73 @@ export default function History() {
 
         {/* Session list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {MOCK_SESSIONS.map((session, i) => (
-            <div
-              key={session.id}
-              className="history-card animate-fade-in-up"
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 34, height: 34, borderRadius: 7,
-                    background: 'var(--color-error-bg)',
-                    border: '1px solid var(--color-error-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Bug size={14} color="var(--color-error)" />
-                </div>
-                <div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>Loading history...</div>
+          ) : sessions.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>No debug sessions yet.</div>
+          ) : (
+            sessions.map((session, i) => (
+              <div
+                key={session.id}
+                className="history-card animate-fade-in-up"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
-                      fontFamily: 'JetBrains Mono',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      fontSize: 13.5,
-                      marginBottom: 3,
+                      width: 34, height: 34, borderRadius: 7,
+                      background: 'var(--color-error-bg)',
+                      border: '1px solid var(--color-error-border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
-                    {session.error}
+                    <Bug size={14} color="var(--color-error)" />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-                    <span
+                  <div>
+                    <div
                       style={{
-                        fontSize: 10.5, fontWeight: 600,
-                        color: LANG_COLORS[session.language] || 'var(--text-secondary)',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: `1px solid rgba(255,255,255,0.08)`,
-                        padding: '2px 7px', borderRadius: 4,
+                        fontFamily: 'JetBrains Mono',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        fontSize: 13.5,
+                        marginBottom: 3,
                       }}
                     >
-                      {session.language}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Clock size={11} />
-                      {session.timestamp}
-                    </span>
-                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10.5, color: 'var(--text-muted)' }}>
-                      {session.trace_id}
-                    </span>
+                      {session.error}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                      <span
+                        style={{
+                          fontSize: 10.5, fontWeight: 600,
+                          color: LANG_COLORS[session.language] || 'var(--text-secondary)',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: `1px solid rgba(255,255,255,0.08)`,
+                          padding: '2px 7px', borderRadius: 4,
+                        }}
+                      >
+                        {session.language}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={11} />
+                        {session.timestamp}
+                      </span>
+                      {session.trace_id && (
+                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10.5, color: 'var(--text-muted)' }}>
+                          {session.trace_id}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                <ConfidenceBadge score={session.confidence} />
               </div>
-              <ConfidenceBadge score={session.confidence} />
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--text-muted)' }}>
-          Connect a database to persist real history. Showing demo data.
+          Powered by local SQLite persistence.
         </div>
       </div>
     </div>

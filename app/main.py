@@ -15,6 +15,10 @@ async def lifespan(app: FastAPI):
     print("  EKIA-2 — AI Debugging Assistant")
     print("=" * 60)
 
+    from app.database import engine, Base
+    import app.models.history
+    Base.metadata.create_all(bind=engine)
+
     from app.services.rag_service import rag_service
     rag_service.initialize()
 
@@ -34,7 +38,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="EKIA-2 AI Debugging Assistant",
     description=(
-        "An intelligent debugging assistant powered by LangGraph, Ollama/Llama3, "
+        "An intelligent debugging assistant powered by LangGraph, Groq/Llama3, "
         "FAISS vector search, and Neo4j GraphRAG. Analyzes errors and provides "
         "structured root-cause analysis, fixes, and learning resources."
     ),
@@ -74,7 +78,7 @@ async def health_check():
         "services": {
             "rag": "ready" if rag_service.is_ready else "initializing",
             "graph": "connected" if graph_service.is_connected else "disconnected",
-            "llm": "ollama (local)",
+            "llm": "groq (cloud)",
             "embeddings": "HuggingFace all-MiniLM-L6-v2",
         },
     }

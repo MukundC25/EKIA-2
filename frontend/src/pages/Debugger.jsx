@@ -6,7 +6,7 @@ import { debugError } from '../services/api';
 import { Bug, Cpu, Activity, Database, AlertCircle } from 'lucide-react';
 
 const INFO_CHIPS = [
-  { icon: Cpu,      label: 'LLM',        value: 'Llama3 · Ollama' },
+  { icon: Cpu,      label: 'LLM',        value: 'Llama3 · Groq' },
   { icon: Activity, label: 'Embeddings', value: 'all-MiniLM-L6-v2' },
   { icon: Database, label: 'Vector DB',  value: 'FAISS (local)' },
   { icon: Bug,      label: 'Knowledge',  value: '25 errors' },
@@ -86,8 +86,8 @@ export default function Debugger() {
               </div>
               <div className="error-hint">
                 1. Backend running? &nbsp;<span style={{ color: 'var(--text-accent)' }}>uvicorn app.main:app --reload</span><br />
-                2. Ollama running? &nbsp;&nbsp;<span style={{ color: 'var(--text-accent)' }}>ollama serve</span><br />
-                3. Model pulled? &nbsp;&nbsp;&nbsp;&nbsp;<span style={{ color: 'var(--text-accent)' }}>ollama pull llama3</span>
+                2. API Key set? &nbsp;&nbsp;<span style={{ color: 'var(--text-accent)' }}>Check GROQ_API_KEY in .env</span><br />
+                3. Internet connected? &nbsp;&nbsp;&nbsp;&nbsp;<span style={{ color: 'var(--text-accent)' }}>Groq requires internet</span>
               </div>
             </div>
           )}

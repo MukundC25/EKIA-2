@@ -12,7 +12,7 @@
 ```
 
 **Production-grade AI Debugging Assistant**
-*LangGraph · Llama3 (Ollama) · FAISS · Neo4j GraphRAG · FastAPI · React*
+*LangGraph · Llama3 (Groq) · FAISS · Neo4j GraphRAG · FastAPI · React*
 
 **EKIA** — Error & Knowledge Intelligence Assistant
 
@@ -30,7 +30,7 @@ FastAPI Backend (Python)
 LangGraph Agent Pipeline
    ┌── 1. Query Parser Node    → Extracts error type, language, context
    ├── 2. Retriever Node       → FAISS semantic search + Neo4j graph context
-   ├── 3. Reasoning Node       → Llama3 via Ollama (local, no API key)
+   ├── 3. Reasoning Node       → Llama3 via Groq (blazing fast cloud API)
    ├── 4. Validation Node      → Confidence scoring + schema validation
    └── 5. Response Node        → Structured JSON output
        ↓
@@ -43,7 +43,7 @@ Langfuse (Tracing, Scoring, Evaluation)
 
 | Layer | Technology |
 |-------|-----------|
-| **LLM** | Ollama / Llama3 (fully local) |
+| **LLM** | Groq / Llama3 (cloud API) |
 | **Embeddings** | HuggingFace `all-MiniLM-L6-v2` |
 | **Vector DB** | FAISS (local) |
 | **Graph DB** | Neo4j (Desktop) |
@@ -61,7 +61,7 @@ Langfuse (Tracing, Scoring, Evaluation)
 | Tool | Purpose | Install |
 |------|---------|---------|
 | Python 3.11+ | Backend | [python.org](https://python.org) |
-| Ollama | Local LLM | [ollama.ai](https://ollama.ai) |
+| Groq API Key | LLM Provider | [console.groq.com](https://console.groq.com/keys) |
 | Neo4j Desktop | Graph DB | [neo4j.com/download](https://neo4j.com/download/) |
 | Node.js 18+ | Frontend | [nodejs.org](https://nodejs.org) |
 
@@ -71,7 +71,7 @@ Langfuse (Tracing, Scoring, Evaluation)
 git clone <your-repo-url>
 cd EKIA-2
 cp .env.example .env
-# Edit .env with your Neo4j password and Langfuse keys
+# Edit .env with your Neo4j password, Langfuse keys, and GROQ_API_KEY
 ```
 
 ### Step 2 — Install Python dependencies
@@ -82,15 +82,11 @@ source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Step 3 — Start Ollama + pull Llama3
+### Step 3 — Get a free Groq API key
 
-```bash
-# Start Ollama (in a new terminal)
-ollama serve
-
-# Pull Llama3 model (~4.7GB, one-time download)
-ollama pull llama3
-```
+1. Visit [console.groq.com/keys](https://console.groq.com/keys)
+2. Create an API key
+3. Add it to your `.env` file as `GROQ_API_KEY`
 
 ### Step 4 — Start Neo4j Desktop
 
@@ -260,8 +256,7 @@ Covers **25 errors** across Java, Python, JavaScript, React, C++, SQL, Docker/K8
 
 | Variable | Description |
 |----------|-------------|
-| `OLLAMA_BASE_URL` | Ollama server URL (`http://localhost:11434`) |
-| `OLLAMA_MODEL` | Model name (`llama3`) |
+| `GROQ_API_KEY` | Your Groq API key (`gsk_...`) |
 | `EMBEDDING_MODEL` | HuggingFace model (`sentence-transformers/all-MiniLM-L6-v2`) |
 | `NEO4J_URI` | Neo4j connection URI |
 | `NEO4J_USERNAME` | Neo4j username |
@@ -274,7 +269,7 @@ Covers **25 errors** across Java, Python, JavaScript, React, C++, SQL, Docker/K8
 
 ## Features
 
-- **Local AI** — Llama3 via Ollama, zero API cost
+- **Cloud AI** — Llama3 via Groq API for blazing fast inference
 - **Hybrid Retrieval** — FAISS semantic search + Neo4j graph traversal
 - **Observability** — Every session traced and scored in Langfuse
 - **Premium UI** — Dark mode, glassmorphism, animated graph visualization

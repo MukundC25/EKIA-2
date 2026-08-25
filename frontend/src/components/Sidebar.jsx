@@ -10,7 +10,7 @@ const navItems = [
 const SERVICE_MAP = {
   rag:   { label: 'Vector DB',   icon: <Share2 size={12} /> },
   graph: { label: 'Neo4j Graph', icon: <Network size={12} /> },
-  llm:   { label: 'Ollama LLM',  icon: <Cpu size={12} /> },
+  llm:   { label: 'Groq LLM',  icon: <Cpu size={12} /> },
 };
 
 export default function Sidebar({ health }) {

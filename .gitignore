@@ -22,3 +22,5 @@ Thumbs.db
 # Node
 frontend/node_modules/
 frontend/dist/
+data/history.db
+data/neo4j_data/

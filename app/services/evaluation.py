@@ -72,6 +72,9 @@ class TraceContext:
                     output={"status": status},
                     metadata={**self.metadata, "duration_ms": duration_ms},
                 )
+                lf = get_langfuse()
+                if lf:
+                    lf.flush()
             except Exception as e:
                 print(f"[Langfuse] Trace update failed: {e}")
 
