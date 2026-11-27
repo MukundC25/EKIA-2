@@ -11,9 +11,13 @@ export default function App() {
   const [health, setHealth] = useState(null);
 
   useEffect(() => {
-    getHealth()
-      .then(setHealth)
-      .catch(() => setHealth({ status: 'offline', services: {} }));
+    const refresh = () =>
+      getHealth()
+        .then(setHealth)
+        .catch(() => setHealth({ status: 'offline', services: {} }));
+    refresh();
+    const id = setInterval(refresh, 15000); // keep service badges live
+    return () => clearInterval(id);
   }, []);
 
   return (

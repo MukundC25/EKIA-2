@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -18,8 +16,13 @@ services:
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
       - LANGFUSE_HOST=${LANGFUSE_HOST:-https://cloud.langfuse.com}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
+      - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-20b}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
       - FAISS_INDEX_PATH=/app/data/faiss_index
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -38,8 +41,11 @@ services:
       - backend
     restart: unless-stopped
 
+  # Neo4j in Docker. Enabled by COMPOSE_PROFILES=docker-neo4j in .env.
+  # To use Neo4j Desktop instead, remove that line and set NEO4J_URI=bolt://host.docker.internal:7687
   neo4j:
     image: neo4j:5.18.0
+    profiles: ["docker-neo4j"]
     container_name: ekia-neo4j
     ports:
       - "7474:7474"

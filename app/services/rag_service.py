@@ -34,5 +34,12 @@ class RAGService:
     def is_ready(self) -> bool:
         return self._vectorstore is not None
 
+    @property
+    def document_count(self) -> int:
+        """Number of vectors actually stored in the FAISS index."""
+        if self._vectorstore is None:
+            return 0
+        return int(self._vectorstore.index.ntotal)
+
 
 rag_service = RAGService()

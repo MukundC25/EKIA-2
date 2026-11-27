@@ -1,5 +1,6 @@
 """Graph Service — Neo4j driver and query interface for GraphRAG."""
 import os
+import time
 from typing import Optional
 from neo4j import GraphDatabase, Driver
 from dotenv import load_dotenv
@@ -10,22 +11,30 @@ load_dotenv()
 class GraphService:
     """Service layer for all Neo4j graph operations."""
 
+    RECONNECT_SECONDS = 15
+
     def __init__(self):
         self._driver: Optional[Driver] = None
+        self._last_attempt = 0.0
+        self.uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+        self.last_error: Optional[str] = None
 
     def connect(self):
         """Initialize Neo4j driver connection."""
-        uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         username = os.getenv("NEO4J_USERNAME", "neo4j")
         password = os.getenv("NEO4J_PASSWORD", "password")
+        self._last_attempt = time.time()
 
         try:
-            self._driver = GraphDatabase.driver(uri, auth=(username, password))
-            self._driver.verify_connectivity()
-            print(f"[GraphService] Connected to Neo4j at {uri}")
+            driver = GraphDatabase.driver(self.uri, auth=(username, password))
+            driver.verify_connectivity()
+            self._driver = driver
+            self.last_error = None
+            print(f"[GraphService] Connected to Neo4j at {self.uri}")
         except Exception as e:
-            print(f"[GraphService] ⚠ Could not connect to Neo4j: {e}")
-            print("[GraphService] Graph features will be unavailable. Start Neo4j Desktop to enable.")
+            self.last_error = str(e)
+            print(f"[GraphService] ⚠ Could not connect to Neo4j at {self.uri}: {e}")
+            print(f"[GraphService] Will retry automatically every {self.RECONNECT_SECONDS}s.")
             self._driver = None
 
     def close(self):
@@ -35,6 +44,9 @@ class GraphService:
 
     @property
     def is_connected(self) -> bool:
+        """True when a live driver exists; retries the connection (throttled) when it doesn't."""
+        if self._driver is None and time.time() - self._last_attempt >= self.RECONNECT_SECONDS:
+            self.connect()
         return self._driver is not None
 
     def search_errors(self, error_name: str, depth: int = 2) -> list[dict]:
@@ -45,6 +57,7 @@ class GraphService:
         query = """
         MATCH (e:Error)
         WHERE toLower(e.name) CONTAINS toLower($error_name)
+           OR toLower($error_name) CONTAINS toLower(e.name)
            OR toLower(e.language) CONTAINS toLower($error_name)
         OPTIONAL MATCH (e)-[:CAUSED_BY]->(c:Concept)
         OPTIONAL MATCH (e)-[:FIXED_BY]->(f:Fix)
@@ -129,16 +142,17 @@ class GraphService:
 
     def get_stats(self) -> dict:
         """Return node/relationship count stats."""
-        if not self._driver:
-            return {"connected": False}
+        if not self.is_connected:
+            return {"connected": False, "uri": self.uri, "error": self.last_error}
 
         try:
             database = os.getenv("NEO4J_DATABASE", "neo4j")
             with self._driver.session(database=database) as session:
                 counts = {}
-                for label in ["Error", "Concept", "Fix", "Problem", "Language"]:
+                for label, key in [("Error", "errors"), ("Concept", "concepts"), ("Fix", "fixes"),
+                                   ("Problem", "problems"), ("Language", "languages")]:
                     result = session.run(f"MATCH (n:{label}) RETURN count(n) AS cnt")
-                    counts[label.lower() + "s"] = result.single()["cnt"]
+                    counts[key] = result.single()["cnt"]
                 rel_result = session.run("MATCH ()-[r]->() RETURN count(r) AS cnt")
                 counts["relationships"] = rel_result.single()["cnt"]
                 return {"connected": True, **counts}

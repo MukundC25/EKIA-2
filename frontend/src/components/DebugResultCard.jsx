@@ -96,12 +96,23 @@ function Section({ icon: Icon, title, variant, children, defaultOpen = true }) {
 export default function DebugResultCard({ result }) {
   if (!result) return null;
 
-  const lang = result.graph_context?.[0]?.error?.language?.toLowerCase() || 'javascript';
+  const graphLang = result.graph_context?.[0]?.error?.language?.toLowerCase() || 'javascript';
 
-  // Extract code lines from fix field (lines after the first paragraph)
-  const fixLines = (result.fix || '').split('\n');
-  const fixText  = fixLines[0];
-  const fixCode  = fixLines.slice(1).join('\n').trim();
+  // Split the fix into prose + code. Prefer a fenced ```lang block when the LLM returns one.
+  const fixRaw = result.fix || '';
+  const fence = fixRaw.match(/```([\w+#-]*)[^\n]*\n([\s\S]*?)(?:```|$)/);
+  let fixText, fixCode, lang = graphLang;
+  if (fence) {
+    const before = fixRaw.slice(0, fence.index).trim();
+    const after = fixRaw.slice(fence.index + fence[0].length).trim();
+    fixText = [before, after].filter(Boolean).join('\n\n');
+    fixCode = fence[2].trim();
+    if (fence[1]) lang = fence[1].toLowerCase();
+  } else {
+    const fixLines = fixRaw.split('\n');
+    fixText = fixLines[0];
+    fixCode = fixLines.slice(1).join('\n').trim();
+  }
 
   return (
     <div className="result-card animate-fade-in-up">
@@ -122,7 +133,14 @@ export default function DebugResultCard({ result }) {
               }}
             >
               <ExternalLink size={10} />
-              Trace: {result.trace_id}
+              {result.trace_url ? (
+                <a href={result.trace_url} target="_blank" rel="noreferrer"
+                   style={{ color: 'inherit', textDecoration: 'underline' }}>
+                  Trace: {result.trace_id} (open in Langfuse)
+                </a>
+              ) : (
+                <>Trace: {result.trace_id}</>
+              )}
             </div>
           )}
         </div>

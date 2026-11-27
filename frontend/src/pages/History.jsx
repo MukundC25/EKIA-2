@@ -1,7 +1,7 @@
 import { History as HistoryIcon, Clock, ExternalLink, BarChart3, Bug } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
-import { getDebugHistory } from '../services/api';
+import { getDebugHistory, getHealth } from '../services/api';
 
 function ConfidenceBadge({ score }) {
   const pct = Math.round(score * 100);
@@ -35,7 +35,11 @@ export default function History() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const langfuseUrl = import.meta.env.VITE_LANGFUSE_HOST || 'https://cloud.langfuse.com';
+  // Real Langfuse project URL from the backend (correct region + project), not a hardcoded host
+  const [langfuseUrl, setLangfuseUrl] = useState('https://cloud.langfuse.com');
+  useEffect(() => {
+    getHealth().then((h) => h.details?.langfuse_url && setLangfuseUrl(h.details.langfuse_url)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     getDebugHistory()

@@ -8,8 +8,28 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from app.main import app
+from app.database import Base, get_db
+from app.models import history as _history_model  # noqa: F401  (registers the table)
 
+# Tests use an isolated in-memory database so they never write into data/history.db
+_engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+Base.metadata.create_all(bind=_engine)
+_TestSession = sessionmaker(bind=_engine)
+
+
+def _test_db():
+    db = _TestSession()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+app.dependency_overrides[get_db] = _test_db
 client = TestClient(app)
 
 
@@ -60,6 +80,7 @@ def test_debug_endpoint_valid_request():
     mock_response.sources = []
     mock_response.graph_context = None
     mock_response.trace_id = "test-trace-id"
+    mock_response.trace_url = None
 
     with patch("app.routes.debug.agent_service.run", return_value=mock_response):
         response = client.post(

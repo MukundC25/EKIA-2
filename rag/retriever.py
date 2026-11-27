@@ -19,12 +19,16 @@ def retrieve_vector_context(query: str, k: int = 5) -> list[dict]:
     vs = get_vectorstore()
     results = vs.similarity_search_with_score(query, k=k)
 
+    # FAISS IndexFlatL2 returns the squared L2 distance. Embeddings are unit-normalized,
+    # so ||q - d||^2 = 2 - 2·cos(q, d)  →  cosine similarity = 1 - distance / 2.
     retrieval_results = []
     for doc, score in results:
+        distance = float(score)
         retrieval_results.append({
             "content": doc.page_content,
             "metadata": doc.metadata,
-            "similarity_score": float(score),
+            "similarity_score": round(1.0 - distance / 2.0, 4),
+            "l2_distance": round(distance, 4),
         })
 
     return retrieval_results
@@ -38,7 +42,7 @@ def format_vector_context(results: list[dict]) -> str:
     parts = []
     for i, result in enumerate(results, 1):
         parts.append(
-            f"--- Source {i} (Similarity: {result['similarity_score']:.3f}) ---\n"
+            f"--- Source {i} (Cosine similarity: {result['similarity_score']:.3f}) ---\n"
             f"{result['content']}\n"
         )
 

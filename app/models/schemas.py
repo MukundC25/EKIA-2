@@ -75,8 +75,9 @@ class DebugResponse(BaseModel):
         description="Model's confidence in the answer (0.0 to 1.0)"
     )
     sources: List[str] = Field(default=[], description="Knowledge base sources used")
-    graph_context: Optional[dict] = Field(default=None, description="Related graph relationships found")
+    graph_context: Optional[List[dict]] = Field(default=None, description="Related graph relationships found")
     trace_id: Optional[str] = Field(default=None, description="Langfuse trace ID for observability")
+    trace_url: Optional[str] = Field(default=None, description="Link to this trace in the Langfuse UI")
 
 
 # ---------------------------------------------------------------------------

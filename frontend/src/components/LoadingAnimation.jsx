@@ -5,7 +5,7 @@ const STEPS = [
   { icon: Search,       label: 'Parsing error query...' },
   { icon: Database,     label: 'Searching vector knowledge base...' },
   { icon: Network,      label: 'Querying knowledge graph...' },
-  { icon: Brain,        label: 'Llama3 reasoning over context...' },
+  { icon: Brain,        label: 'LLM reasoning over retrieved context...' },
   { icon: ShieldCheck,  label: 'Validating response structure...' },
   { icon: CheckCircle2, label: 'Preparing final analysis...' },
 ];
@@ -36,7 +36,7 @@ export default function LoadingAnimation() {
             Running EKIA Agent Pipeline
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-            5-node LangGraph · Llama3 · FAISS · Neo4j
+            5-node LangGraph · Groq LLM · FAISS · Neo4j
           </div>
         </div>
 

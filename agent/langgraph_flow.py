@@ -1,10 +1,11 @@
 """LangGraph Agent Pipeline — 5-node StateGraph: parse → retrieve → reason → validate → respond"""
 import json
+import os
 import re
-from typing import TypedDict, Optional, Any
+from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from langchain_groq import ChatGroq
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage
 
 from agent.prompts import (
     SYSTEM_PROMPT,
@@ -13,6 +14,10 @@ from agent.prompts import (
     REASONING_PROMPT,
 )
 from rag.retriever import retrieve_vector_context, format_vector_context
+from app.services.evaluation import observation
+
+LLM_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+LLM_TEMPERATURE = 0.0
 
 
 class AgentState(TypedDict):
@@ -32,11 +37,30 @@ class AgentState(TypedDict):
 
 
 def get_llm() -> ChatGroq:
-    """Initialize the Groq LLM (Llama 3)."""
-    return ChatGroq(
-        model="openai/gpt-oss-20b",
-        temperature=0.0
-    )
+    """Initialize the Groq-hosted LLM (model set by GROQ_MODEL)."""
+    return ChatGroq(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+
+
+def invoke_llm(prompt: str, name: str) -> str:
+    """Call the LLM once, recorded in Langfuse as a generation with token usage."""
+    with observation(
+        name,
+        as_type="generation",
+        model=LLM_MODEL,
+        model_parameters={"temperature": LLM_TEMPERATURE},
+        input=prompt,
+    ) as gen:
+        response = get_llm().invoke([HumanMessage(content=prompt)])
+        usage = (getattr(response, "response_metadata", None) or {}).get("token_usage", {}) or {}
+        gen.update(
+            output=response.content,
+            usage_details={
+                "input": int(usage.get("prompt_tokens", 0) or 0),
+                "output": int(usage.get("completion_tokens", 0) or 0),
+                "total": int(usage.get("total_tokens", 0) or 0),
+            },
+        )
+        return response.content
 
 
 def extract_json(text: str) -> dict:
@@ -68,27 +92,28 @@ def extract_json(text: str) -> dict:
 
 def parse_query_node(state: AgentState) -> AgentState:
     """Rewrite and structure the raw user query."""
-    try:
-        llm = get_llm()
-        prompt = QUERY_REWRITE_PROMPT.format(raw_query=state["raw_input"])
-        response = llm.invoke([HumanMessage(content=prompt)])
-        parsed = extract_json(response.content)
+    with observation("parse_query", as_type="chain", input={"raw_input": state["raw_input"]}) as span:
+        try:
+            prompt = QUERY_REWRITE_PROMPT.format(raw_query=state["raw_input"])
+            parsed = extract_json(invoke_llm(prompt, "llm.query_rewrite"))
 
-        if state.get("language") and state["language"] != "other":
-            parsed["language"] = state["language"]
-        if state.get("context"):
-            parsed["context"] = state["context"]
+            if state.get("language") and state["language"] != "other":
+                parsed["language"] = state["language"]
+            if state.get("context"):
+                parsed["context"] = state["context"]
 
-        state["parsed_query"] = parsed
-        print(f"[Agent] Parsed query: {parsed.get('error_type')} ({parsed.get('language')})")
-    except Exception as e:
-        print(f"[Agent] parse_query error: {e}")
-        state["parsed_query"] = {
-            "error_type": state["raw_input"][:100],
-            "language": state.get("language", "unknown"),
-            "context": state.get("context", ""),
-            "rewritten_query": state["raw_input"],
-        }
+            state["parsed_query"] = parsed
+            print(f"[Agent] Parsed query: {parsed.get('error_type')} ({parsed.get('language')})")
+        except Exception as e:
+            print(f"[Agent] parse_query error: {e}")
+            state["parsed_query"] = {
+                "error_type": state["raw_input"][:100],
+                "language": state.get("language", "unknown"),
+                "context": state.get("context", ""),
+                "rewritten_query": state["raw_input"],
+            }
+            span.update(level="WARNING", status_message=f"Fell back to raw query: {e}")
+        span.update(output=state["parsed_query"])
     return state
 
 
@@ -97,28 +122,41 @@ def retrieve_node(state: AgentState) -> AgentState:
     parsed = state.get("parsed_query", {})
     search_query = parsed.get("rewritten_query", state["raw_input"])
 
-    try:
-        vector_results = retrieve_vector_context(search_query, k=5)
-        state["vector_results"] = vector_results
-        state["vector_context_str"] = format_vector_context(vector_results)
-        print(f"[Agent] Retrieved {len(vector_results)} vector documents")
-    except Exception as e:
-        print(f"[Agent] Vector retrieval error: {e}")
-        state["vector_results"] = []
-        state["vector_context_str"] = "Vector retrieval unavailable."
+    with observation("retrieve", as_type="retriever", input={"query": search_query, "k": 5}) as span:
+        try:
+            vector_results = retrieve_vector_context(search_query, k=5)
+            state["vector_results"] = vector_results
+            state["vector_context_str"] = format_vector_context(vector_results)
+            print(f"[Agent] Retrieved {len(vector_results)} vector documents")
+        except Exception as e:
+            print(f"[Agent] Vector retrieval error: {e}")
+            state["vector_results"] = []
+            state["vector_context_str"] = "Vector retrieval unavailable."
+            span.update(level="ERROR", status_message=str(e))
 
-    graph_results = state.get("graph_results", [])
-    if graph_results:
-        graph_str = json.dumps(graph_results, indent=2)
-    else:
-        graph_str = "No graph context available."
-    state["graph_context_str"] = graph_str
+        graph_results = state.get("graph_results", [])
+        state["graph_context_str"] = (
+            json.dumps(graph_results, indent=2) if graph_results else "No graph context available."
+        )
 
+        span.update(
+            output={
+                "vector_hits": [
+                    {
+                        "error_type": r["metadata"].get("error_type"),
+                        "language": r["metadata"].get("language"),
+                        "cosine_similarity": r["similarity_score"],
+                    }
+                    for r in state["vector_results"]
+                ],
+                "graph_hits": len(graph_results),
+            }
+        )
     return state
 
 
 def reason_node(state: AgentState) -> AgentState:
-    """Call Groq/Llama3 to analyze the error using retrieved context."""
+    """Call the LLM to analyze the error using retrieved context."""
     parsed = state.get("parsed_query", {})
 
     prompt = REASONING_PROMPT.format(
@@ -132,24 +170,25 @@ def reason_node(state: AgentState) -> AgentState:
         system_rules=SYSTEM_PROMPT,
     )
 
-    try:
-        llm = get_llm()
-        response = llm.invoke([HumanMessage(content=prompt)])
-        reasoning = extract_json(response.content)
-        state["reasoning_output"] = reasoning
-        print(f"[Agent] Reasoning complete — confidence: {reasoning.get('confidence_score', '?')}")
-    except Exception as e:
-        print(f"[Agent] Reasoning error: {e}")
-        state["reasoning_output"] = {
-            "error": parsed.get("error_type", "Unknown Error"),
-            "root_cause": f"Analysis failed: {str(e)}",
-            "beginner_explanation": f"LLM error: {str(e)}",
-            "technical_explanation": "Failed to connect to the LLM. Verify your GROQ_API_KEY.",
-            "fix": "Please check your GROQ_API_KEY in the .env file.",
-            "related_concepts": [],
-            "practice_problems": [],
-            "confidence_score": 0.0,
-        }
+    with observation("reason", as_type="chain", input={"error": parsed.get("error_type")}) as span:
+        try:
+            reasoning = extract_json(invoke_llm(prompt, "llm.reasoning"))
+            state["reasoning_output"] = reasoning
+            print(f"[Agent] Reasoning complete — confidence: {reasoning.get('confidence_score', '?')}")
+        except Exception as e:
+            print(f"[Agent] Reasoning error: {e}")
+            state["reasoning_output"] = {
+                "error": parsed.get("error_type", "Unknown Error"),
+                "root_cause": f"Analysis failed: {str(e)}",
+                "beginner_explanation": f"LLM error: {str(e)}",
+                "technical_explanation": "Failed to connect to the LLM. Verify your GROQ_API_KEY.",
+                "fix": "Please check your GROQ_API_KEY in the .env file.",
+                "related_concepts": [],
+                "practice_problems": [],
+                "confidence_score": 0.0,
+            }
+            span.update(level="ERROR", status_message=str(e))
+        span.update(output={"confidence_score": state["reasoning_output"].get("confidence_score")})
     return state
 
 
@@ -168,22 +207,45 @@ def validate_node(state: AgentState) -> AgentState:
         "confidence_score": 0.5,
     }
 
-    validated = {**required_fields, **reasoning}
-    validated["confidence_score"] = max(0.0, min(1.0, float(validated.get("confidence_score", 0.5))))
+    with observation("validate", as_type="span") as span:
+        missing = [k for k in required_fields if k not in reasoning]
+        validated = {**required_fields, **reasoning}
+        try:
+            raw_conf = float(validated.get("confidence_score", 0.5))
+        except (TypeError, ValueError):
+            raw_conf = 0.5
+        validated["confidence_score"] = max(0.0, min(1.0, raw_conf))
 
-    if not isinstance(validated["related_concepts"], list):
-        validated["related_concepts"] = []
-    if not isinstance(validated["practice_problems"], list):
-        validated["practice_problems"] = []
+        # LLMs sometimes double-escape JSON, leaving literal "\n" / "\t" in strings. Restore real ones.
+        unescaped = []
+        for key in ("root_cause", "beginner_explanation", "technical_explanation", "fix"):
+            value = validated.get(key)
+            if isinstance(value, str) and "\\n" in value and value.count("\\n") > value.count("\n"):
+                validated[key] = value.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t").replace('\\"', '"')
+                unescaped.append(key)
 
-    sources = []
-    for result in state.get("vector_results", [])[:3]:
-        meta = result.get("metadata", {})
-        if meta.get("error_type"):
-            sources.append(f"{meta['error_type']} ({meta.get('language', '?')})")
-    validated["sources"] = sources
+        if not isinstance(validated["related_concepts"], list):
+            validated["related_concepts"] = []
+        if not isinstance(validated["practice_problems"], list):
+            validated["practice_problems"] = []
 
-    state["reasoning_output"] = validated
+        sources = []
+        for result in state.get("vector_results", [])[:3]:
+            meta = result.get("metadata", {})
+            if meta.get("error_type"):
+                sources.append(f"{meta['error_type']} ({meta.get('language', '?')})")
+        validated["sources"] = sources
+
+        state["reasoning_output"] = validated
+        span.update(
+            output={
+                "missing_fields_filled": missing,
+                "unescaped_fields": unescaped,
+                "confidence_raw": raw_conf,
+                "confidence_clamped": validated["confidence_score"],
+                "sources": sources,
+            }
+        )
     print("[Agent] Validation passed.")
     return state
 

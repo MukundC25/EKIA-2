@@ -2,39 +2,43 @@
 import asyncio
 from app.models.schemas import DebugRequest, DebugResponse
 from app.services.graph_service import graph_service
-from app.services.evaluation import TraceContext
-from agent.langgraph_flow import agent_graph
+from app.services.evaluation import observation, score_response, trace_url
+from agent.langgraph_flow import agent_graph, LLM_MODEL
 
 
 class AgentService:
     """Orchestrates the full EKIA debug agent pipeline."""
 
     async def run(self, request: DebugRequest) -> DebugResponse:
-        """Run the 5-node LangGraph pipeline with Langfuse tracing."""
+        """Run the 5-node LangGraph pipeline inside one Langfuse trace."""
+        language = request.language.value if request.language else "other"
         trace_input = {
             "error": request.error,
-            "language": request.language.value if request.language else "other",
-            "has_context": bool(request.context),
+            "language": language,
+            "context": request.context or "",
             "has_code": bool(request.code_snippet),
         }
 
-        with TraceContext(
-            name="ekia_debug_agent",
-            input_data=trace_input,
-            metadata={"language": request.language.value if request.language else "other"},
-        ) as trace:
+        with observation(
+            "ekia_debug_agent",
+            as_type="agent",
+            input=trace_input,
+            metadata={"language": language, "llm": LLM_MODEL},
+        ) as root:
 
             graph_results = []
             if graph_service.is_connected:
-                try:
-                    graph_results = graph_service.search_errors(request.error)
-                    trace.log_span("graph_retrieval", request.error, graph_results)
-                except Exception as e:
-                    print(f"[AgentService] Graph retrieval failed: {e}")
+                with observation("graph_retrieval", as_type="retriever", input={"error": request.error}) as span:
+                    try:
+                        graph_results = await asyncio.to_thread(graph_service.search_errors, request.error)
+                    except Exception as e:
+                        print(f"[AgentService] Graph retrieval failed: {e}")
+                        span.update(level="ERROR", status_message=str(e))
+                    span.update(output={"matches": len(graph_results), "results": graph_results})
 
             initial_state = {
                 "raw_input": request.error,
-                "language": request.language.value if request.language else "other",
+                "language": language,
                 "context": request.context or "",
                 "code_snippet": request.code_snippet or "",
                 "parsed_query": {},
@@ -45,38 +49,49 @@ class AgentService:
                 "reasoning_output": {},
                 "final_response": {},
                 "error": None,
-                "trace_id": trace.trace_id,
+                "trace_id": root.trace_id,
             }
 
             final_state = await asyncio.to_thread(agent_graph.invoke, initial_state)
             result = final_state.get("final_response", {})
 
-            trace.score_response(result)
-            if graph_service.is_connected:
-                asyncio.create_task(
-                    asyncio.to_thread(
-                        graph_service.ingest_debug_result,
-                        error_name=result.get("error", request.error),
-                        language=request.language.value if request.language else "other",
-                        root_cause=result.get("root_cause", ""),
-                        fix=result.get("fix", ""),
-                        related_concepts=result.get("related_concepts", []),
-                    )
-                )
-
-            return DebugResponse(
-                error=result.get("error", request.error),
-                root_cause=result.get("root_cause", ""),
-                beginner_explanation=result.get("beginner_explanation", ""),
-                technical_explanation=result.get("technical_explanation", ""),
-                fix=result.get("fix", ""),
-                related_concepts=result.get("related_concepts", []),
-                practice_problems=result.get("practice_problems", []),
-                confidence_score=result.get("confidence_score", 0.5),
-                sources=result.get("sources", []),
-                graph_context=result.get("graph_context"),
-                trace_id=result.get("trace_id"),
+            score_response(root, result)
+            root.update(
+                output={
+                    "error": result.get("error"),
+                    "root_cause": result.get("root_cause"),
+                    "fix": result.get("fix"),
+                    "confidence_score": result.get("confidence_score"),
+                    "sources": result.get("sources"),
+                }
             )
+
+        if graph_service.is_connected:
+            asyncio.create_task(
+                asyncio.to_thread(
+                    graph_service.ingest_debug_result,
+                    error_name=result.get("error", request.error),
+                    language=language,
+                    root_cause=result.get("root_cause", ""),
+                    fix=result.get("fix", ""),
+                    related_concepts=result.get("related_concepts", []),
+                )
+            )
+
+        return DebugResponse(
+            error=result.get("error", request.error),
+            root_cause=result.get("root_cause", ""),
+            beginner_explanation=result.get("beginner_explanation", ""),
+            technical_explanation=result.get("technical_explanation", ""),
+            fix=result.get("fix", ""),
+            related_concepts=result.get("related_concepts", []),
+            practice_problems=result.get("practice_problems", []),
+            confidence_score=result.get("confidence_score", 0.5),
+            sources=result.get("sources", []),
+            graph_context=result.get("graph_context"),
+            trace_id=result.get("trace_id"),
+            trace_url=trace_url(result.get("trace_id")),
+        )
 
 
 agent_service = AgentService()

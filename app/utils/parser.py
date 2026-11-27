@@ -11,7 +11,8 @@ LANGUAGE_PATTERNS = {
         r"\.java:", r"at com\.", r"at org\.",
     ],
     "python": [
-        r"KeyError", r"AttributeError", r"IndexError", r"TypeError",
+        r"KeyError", r"AttributeError", r"IndexError",
+        r"TypeError(?!: Cannot read propert)",  # that phrasing is the JS/V8 message
         r"ValueError", r"RecursionError", r"ModuleNotFoundError",
         r"ImportError", r"ZeroDivisionError", r"NameError",
         r"Traceback \(most recent call last\)",

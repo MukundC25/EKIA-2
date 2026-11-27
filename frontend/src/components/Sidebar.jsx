@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Bug, Network, History, Terminal, Cpu, Share2, Clock } from 'lucide-react';
+import { Bug, Network, History, Terminal, Cpu, Share2, Clock, Activity } from 'lucide-react';
 
 const navItems = [
   { path: '/',       icon: Bug,     label: 'Debugger' },
@@ -11,6 +11,7 @@ const SERVICE_MAP = {
   rag:   { label: 'Vector DB',   icon: <Share2 size={12} /> },
   graph: { label: 'Neo4j Graph', icon: <Network size={12} /> },
   llm:   { label: 'Groq LLM',  icon: <Cpu size={12} /> },
+  langfuse: { label: 'Langfuse',  icon: <Activity size={12} /> },
 };
 
 export default function Sidebar({ health }) {

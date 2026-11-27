@@ -1,21 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ErrorInputForm from '../components/ErrorInputForm';
 import DebugResultCard from '../components/DebugResultCard';
 import LoadingAnimation from '../components/LoadingAnimation';
-import { debugError } from '../services/api';
+import { debugError, getHealth } from '../services/api';
 import { Bug, Cpu, Activity, Database, AlertCircle } from 'lucide-react';
 
-const INFO_CHIPS = [
-  { icon: Cpu,      label: 'LLM',        value: 'Llama3 · Groq' },
-  { icon: Activity, label: 'Embeddings', value: 'all-MiniLM-L6-v2' },
-  { icon: Database, label: 'Vector DB',  value: 'FAISS (local)' },
-  { icon: Bug,      label: 'Knowledge',  value: '25 errors' },
+// Values come from the backend's live /health check, never hardcoded.
+const buildInfoChips = (d) => [
+  { icon: Cpu,      label: 'LLM',        value: d ? `${d.llm_model} · ${d.llm_provider}` : '…' },
+  { icon: Activity, label: 'Embeddings', value: d ? d.embedding_model : '…' },
+  { icon: Database, label: 'Vector DB',  value: d ? d.vector_store : '…' },
+  { icon: Bug,      label: 'Knowledge',  value: d ? `${d.knowledge_documents} documents` : '…' },
 ];
 
 export default function Debugger() {
   const [result,  setResult]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
+  const [details, setDetails] = useState(null);
+
+  useEffect(() => {
+    getHealth().then((h) => setDetails(h.details)).catch(() => setDetails(null));
+  }, []);
 
   const handleSubmit = async (formData) => {
     setLoading(true);
@@ -57,7 +63,7 @@ export default function Debugger() {
 
         {/* Info chips */}
         <div className="info-bar">
-          {INFO_CHIPS.map(({ icon: Icon, label, value }) => (
+          {buildInfoChips(details).map(({ icon: Icon, label, value }) => (
             <div key={label} className="info-chip">
               <Icon size={12} />
               <span>{label}:</span>

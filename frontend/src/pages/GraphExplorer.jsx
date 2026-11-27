@@ -26,7 +26,7 @@ export default function GraphExplorer() {
     try {
       const [graph, graphStats] = await Promise.all([getFullGraph(150), getGraphStats()]);
       setGraphData({ nodes: graph.nodes, edges: graph.edges });
-      setIsDemo(graph.demo_mode || false);
+      setIsDemo(graph.connected === false);
       setStats(graphStats);
     } catch (e) {
       console.error('Graph load error:', e);
@@ -85,7 +85,7 @@ export default function GraphExplorer() {
                       border: '1px solid rgba(245,158,11,0.25)', padding: '3px 8px', borderRadius: 4,
                     }}
                   >
-                    Demo Mode
+                    Neo4j Offline
                   </span>
                 )}
               </div>
@@ -113,9 +113,9 @@ export default function GraphExplorer() {
             }}
           >
             <AlertCircle size={13} />
-            Neo4j not connected — showing demo graph data. Start Neo4j Desktop and run{' '}
+            Neo4j is not reachable — start the database, then load the knowledge base with{' '}
             <code style={{ fontFamily: 'JetBrains Mono', background: 'rgba(0,0,0,0.3)', padding: '1px 6px', borderRadius: 4 }}>
-              python -m graph.ingest_graph
+              docker compose exec backend python -m graph.ingest_graph
             </code>
           </div>
         )}
