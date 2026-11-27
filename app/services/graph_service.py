@@ -1,5 +1,6 @@
 """Graph Service — Neo4j driver and query interface for GraphRAG."""
 import os
+import threading
 import time
 from typing import Optional
 from neo4j import GraphDatabase, Driver
@@ -31,11 +32,31 @@ class GraphService:
             self._driver = driver
             self.last_error = None
             print(f"[GraphService] Connected to Neo4j at {self.uri}")
+            if os.getenv("AUTO_INGEST_KB", "true").lower() == "true":
+                threading.Thread(target=self.ensure_knowledge_base, daemon=True).start()
         except Exception as e:
             self.last_error = str(e)
             print(f"[GraphService] ⚠ Could not connect to Neo4j at {self.uri}: {e}")
             print(f"[GraphService] Will retry automatically every {self.RECONNECT_SECONDS}s.")
             self._driver = None
+
+    def ensure_knowledge_base(self):
+        """Load the curated knowledge base into an empty database (e.g. a fresh AuraDB instance).
+
+        Does nothing when Error nodes already exist, so existing graphs are never touched.
+        """
+        try:
+            database = os.getenv("NEO4J_DATABASE", "neo4j")
+            with self._driver.session(database=database) as session:
+                existing = session.run("MATCH (e:Error) RETURN count(e) AS cnt").single()["cnt"]
+                if existing > 0:
+                    print(f"[GraphService] Knowledge graph present ({existing} errors) — no ingestion needed.")
+                    return
+                print("[GraphService] Empty database — loading the knowledge base...")
+                from graph.ingest_graph import ingest_knowledge_base
+                ingest_knowledge_base(session)
+        except Exception as e:
+            print(f"[GraphService] Knowledge-base check/ingestion failed: {e}")
 
     def close(self):
         if self._driver:

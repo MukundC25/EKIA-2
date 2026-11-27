@@ -70,7 +70,7 @@ async def lifespan(app: FastAPI):
     print(f"[LLM] Groq status: {llm['status']}" + (f" — {llm['detail']}" if llm["detail"] else ""))
 
     print("=" * 60)
-    print("  EKIA-2 ready. API docs: http://localhost:8001/docs")
+    print("  EKIA-2 ready. API docs at /docs")
     print("=" * 60 + "\n")
 
     yield
@@ -148,12 +148,30 @@ async def health_check():
     }
 
 
-@app.get("/", tags=["root"])
-async def root():
-    return {
-        "message": "Welcome to EKIA-2 — AI Debugging Assistant",
-        "docs": "/docs",
-        "health": "/health",
-        "debug": "POST /api/debug",
-        "graph": "GET /api/graph",
-    }
+STATIC_DIR = os.getenv("STATIC_DIR")
+
+if STATIC_DIR and os.path.isdir(STATIC_DIR):
+    # Single-container mode (Hugging Face Spaces): FastAPI also serves the built React app.
+    from fastapi import HTTPException
+    from fastapi.responses import FileResponse
+
+    _static_root = os.path.realpath(STATIC_DIR)
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        if full_path.startswith(("api/", "docs", "redoc", "openapi.json")):
+            raise HTTPException(status_code=404)
+        candidate = os.path.realpath(os.path.join(_static_root, full_path))
+        if full_path and candidate.startswith(_static_root + os.sep) and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        return FileResponse(os.path.join(_static_root, "index.html"))  # SPA routes: /graph, /history
+else:
+    @app.get("/", tags=["root"])
+    async def root():
+        return {
+            "message": "Welcome to EKIA-2 — AI Debugging Assistant",
+            "docs": "/docs",
+            "health": "/health",
+            "debug": "POST /api/debug",
+            "graph": "GET /api/graph",
+        }

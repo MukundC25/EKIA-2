@@ -20,8 +20,7 @@ KNOWLEDGE_BASE_PATH = "data/error_knowledge_base/errors.json"
 def load_errors() -> list[dict]:
     path = Path(KNOWLEDGE_BASE_PATH)
     if not path.exists():
-        print(f"[ERROR] Knowledge base not found at {path}")
-        sys.exit(1)
+        raise FileNotFoundError(f"Knowledge base not found at {path}")
     with open(path, "r") as f:
         return json.load(f)
 
@@ -106,32 +105,38 @@ def ingest_error(session, error: dict):
         )
 
 
+def ingest_knowledge_base(session) -> int:
+    """Create constraints and MERGE every knowledge-base entry (idempotent). Returns entries loaded."""
+    create_constraints(session)
+
+    errors = load_errors()
+    print(f"[Graph] Ingesting {len(errors)} errors into knowledge graph...")
+
+    loaded = 0
+    for i, error in enumerate(errors, 1):
+        try:
+            ingest_error(session, error)
+            loaded += 1
+            print(f"  [{i:02d}/{len(errors)}] ✓ {error['error_type']} ({error['language']})")
+        except Exception as e:
+            print(f"  [{i:02d}/{len(errors)}] ✗ Failed {error['error_type']}: {e}")
+
+    print(f"\n[Graph] ✅ Ingestion complete! ({loaded}/{len(errors)})")
+    return loaded
+
+
 def main():
     print(f"[Graph] Connecting to Neo4j at {NEO4J_URI}...")
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
 
     try:
+        driver.verify_connectivity()
+        print("[Graph] Connected to Neo4j.")
         with driver.session(database=NEO4J_DATABASE) as session:
-            driver.verify_connectivity()
-            print("[Graph] Connected to Neo4j.")
-
-            create_constraints(session)
-
-            errors = load_errors()
-            print(f"[Graph] Ingesting {len(errors)} errors into knowledge graph...")
-
-            for i, error in enumerate(errors, 1):
-                try:
-                    ingest_error(session, error)
-                    print(f"  [{i:02d}/{len(errors)}] ✓ {error['error_type']} ({error['language']})")
-                except Exception as e:
-                    print(f"  [{i:02d}/{len(errors)}] ✗ Failed {error['error_type']}: {e}")
-
-            print("\n[Graph] ✅ Ingestion complete!")
-
+            ingest_knowledge_base(session)
     except Exception as e:
         print(f"[Graph] ❌ Connection failed: {e}")
-        print("[Graph] Make sure Neo4j Desktop is running and credentials are correct in .env")
+        print("[Graph] Make sure Neo4j is running and the credentials in .env are correct")
         sys.exit(1)
     finally:
         driver.close()

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/graph/", "destination": "https://cuts-training-continuously-enquiry.trycloudflare.com/api/graph/" },
+    { "source": "/api/:path*", "destination": "https://cuts-training-continuously-enquiry.trycloudflare.com/api/:path*" },
+    { "source": "/health", "destination": "https://cuts-training-continuously-enquiry.trycloudflare.com/health" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

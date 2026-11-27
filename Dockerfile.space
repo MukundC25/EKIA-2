@@ -1,0 +1,64 @@
+# Single-container image for Hugging Face Spaces (Docker SDK).
+# Runs the whole EKIA stack in one container:
+#   - Neo4j 5 (embedded, localhost only; knowledge base auto-loads on start)
+#   - FastAPI backend + the built React frontend, served by uvicorn on port 7860
+# Groq and Langfuse are external services configured through Space secrets.
+
+# ---- Neo4j server + Java runtime, taken from the official image ----
+FROM neo4j:5.18.0 AS neo4j
+
+# ---- Build the React frontend ----
+FROM node:20-alpine AS frontend
+WORKDIR /fe
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# ---- Final image ----
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies first (slowest layers, cached across deploys)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Embedded Neo4j (server + Java 17), listening on localhost only
+COPY --from=neo4j /opt/java/openjdk /opt/java/openjdk
+COPY --from=neo4j /var/lib/neo4j /opt/neo4j
+ENV JAVA_HOME=/opt/java/openjdk \
+    NEO4J_HOME=/opt/neo4j \
+    NEO4J_EMBEDDED=true
+RUN rm -f /opt/neo4j/data /opt/neo4j/logs \
+    && mkdir -p /opt/neo4j/data /opt/neo4j/logs /opt/neo4j/run \
+    && printf '%s\n' \
+       'server.default_listen_address=127.0.0.1' \
+       'server.memory.heap.initial_size=512m' \
+       'server.memory.heap.max_size=1g' \
+       'server.memory.pagecache.size=256m' \
+       >> /opt/neo4j/conf/neo4j.conf
+
+# Spaces run containers as uid 1000
+RUN useradd -m -u 1000 user && chown -R user:user /opt/neo4j
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    TOKENIZERS_PARALLELISM=false \
+    HF_HOME=/home/user/.cache/huggingface \
+    STATIC_DIR=/home/user/app/static \
+    PORT=7860
+WORKDIR /home/user/app
+
+USER user
+# Bake the embedding model into the image so startup needs no download
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+
+COPY --chown=user . .
+COPY --chown=user --from=frontend /fe/dist ./static
+RUN mkdir -p data/faiss_index
+
+EXPOSE 7860
+CMD ["sh", "deploy/space-start.sh"]

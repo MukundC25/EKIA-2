@@ -9,3 +9,5 @@ frontend/dist
 *.egg-info
 .DS_Store
 data/faiss_index
+data/neo4j_data
+data/history.db
