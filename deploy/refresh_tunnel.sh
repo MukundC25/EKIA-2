@@ -26,12 +26,27 @@ done
 [ -n "$URL" ] || { echo "Tunnel did not start; see $LOG"; exit 1; }
 echo "Tunnel: $URL"
 
-# Only repoint Vercel once the tunnel really reaches the backend
-for _ in $(seq 1 20); do
-  curl -sf -m 10 "$URL/health" >/dev/null && break
+# Only repoint Vercel once the tunnel really reaches the backend.
+# Resolve the new hostname via public DNS (1.1.1.1): the Mac's resolver often caches the
+# "not found" answer from a lookup made before the record existed, which would fail this check
+# even though the tunnel is reachable from the internet (and from Vercel).
+HOST="${URL#https://}"
+tunnel_ok() {
+  local ip
+  ip="$(dig +short "$HOST" @1.1.1.1 2>/dev/null | grep -E '^[0-9.]+$' | head -1 || true)"
+  if [ -n "$ip" ]; then
+    curl -sf -m 10 --resolve "$HOST:443:$ip" "$URL/health" >/dev/null
+  else
+    curl -sf -m 10 "$URL/health" >/dev/null
+  fi
+}
+ok=""
+for _ in $(seq 1 30); do
+  if tunnel_ok; then ok=1; break; fi
   sleep 2
 done
-curl -sf -m 10 "$URL/health" >/dev/null || { echo "Tunnel is up but not reaching the backend yet; vercel.json left unchanged."; exit 1; }
+[ -n "$ok" ] || { echo "Tunnel is up but not reaching the backend yet; vercel.json left unchanged. See $LOG"; exit 1; }
+echo "Tunnel verified: reaches the backend."
 
 cat > frontend/vercel.json <<JSON
 {
