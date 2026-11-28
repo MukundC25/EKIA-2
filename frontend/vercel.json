@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/graph/", "destination": "Binary file data/tunnel.log matches/api/graph/" },
-    { "source": "/api/:path*", "destination": "Binary file data/tunnel.log matches/api/:path*" },
-    { "source": "/health", "destination": "Binary file data/tunnel.log matches/health" },
+    { "source": "/api/graph/", "destination": "https://feed-mods-mill-drawn.trycloudflare.com/api/graph/" },
+    { "source": "/api/:path*", "destination": "https://feed-mods-mill-drawn.trycloudflare.com/api/:path*" },
+    { "source": "/health", "destination": "https://feed-mods-mill-drawn.trycloudflare.com/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
