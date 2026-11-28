@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/graph/", "destination": "https://feed-mods-mill-drawn.trycloudflare.com/api/graph/" },
-    { "source": "/api/:path*", "destination": "https://feed-mods-mill-drawn.trycloudflare.com/api/:path*" },
-    { "source": "/health", "destination": "https://feed-mods-mill-drawn.trycloudflare.com/health" },
+    { "source": "/api/graph/", "destination": "https://treatments-responding-site-lecture.trycloudflare.com/api/graph/" },
+    { "source": "/api/:path*", "destination": "https://treatments-responding-site-lecture.trycloudflare.com/api/:path*" },
+    { "source": "/health", "destination": "https://treatments-responding-site-lecture.trycloudflare.com/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
